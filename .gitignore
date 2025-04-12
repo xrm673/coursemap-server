@@ -9,6 +9,11 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# Firebase
+*-firebase-adminsdk-*.json
+firebase-service-account.json
+service-account.json
+
 # Build output
 dist/
 build/
