@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { courseRouter } from './course/course.routes';
+import { majorRouter } from './major/major.routes';
+import { userRouter } from './user/user.routes';
+import { requirementRouter } from './requirement/requirement.routes';
 
 // Load environment variables
 dotenv.config();
@@ -15,8 +18,9 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/courses', courseRouter);
-// app.use('/api/majors', majorRouter);    // Uncomment when majors are implemented
-// app.use('/api/subjects', subjectRouter); // Uncomment when subjects are implemented
+app.use('/api/majors', majorRouter); 
+app.use('/api/requirements', requirementRouter);
+app.use('/api/users', userRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

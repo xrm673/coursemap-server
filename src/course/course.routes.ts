@@ -4,10 +4,10 @@
 import express from 'express';
 import { getCourseById } from './course.controller';
 
-const router = express.Router();
+const courseRouter = express.Router();
 
 // Course routes
-router.get('/:id', getCourseById);
+courseRouter.get('/:id', getCourseById);
 
 // Export the router
-export const courseRouter = router;
+export { courseRouter };

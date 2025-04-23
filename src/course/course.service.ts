@@ -2,13 +2,13 @@
 // Business logic for courses
 
 import * as CourseModel from './course.model';
-import { Course } from './course.model';
+import { Course, NoDataCourse } from './course.model';
 
 
-export const getCourse = async (id: string): Promise<Course> => {
-  const course = await CourseModel.getCourseById(id);
+export const getCourse = async (courseId: string): Promise<Course | NoDataCourse> => {
+  const course = await CourseModel.findById(courseId);
   if (!course) {
-    throw new Error('Course not found');
+    return {courseId: courseId};
   }
   return course;
 };
