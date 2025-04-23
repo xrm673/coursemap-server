@@ -193,14 +193,6 @@ export interface CourseGroup {
   notes?: string;
 }
 
-export interface CourseGroupProcessed {
-  id: number;
-  topic?: string;
-  coursesProcessed: Array<Course | NoDataCourse>;
-  notes?: string;
-  groupCompleted: boolean;
-}
-
 
 export const findById = async (id: string): Promise<Course | null> => {
   const doc = await coursesCollection.doc(id).get();

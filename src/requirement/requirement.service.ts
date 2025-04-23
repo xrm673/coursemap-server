@@ -3,9 +3,7 @@
 
 import * as RequirementModel from './requirement.model';
 import { Requirement, ProcessedRequirement } from './requirement.model';
-import { User } from '../user/user.model';
-import { Course, CourseGroupProcessed, CourseInSchedule } from '../course/course.model';
-import { getCourse } from '../course/course.service';
+import { CourseInSchedule } from '../course/course.model';
 
 
 export const getRequirement = async (
@@ -46,8 +44,6 @@ export const processRequirements = async (
                 takenCourses: [],
                 plannedCourses: [],
                 eligibleButNotUsedCourses: [],
-                coursesDetails: [],
-                courseGrpsDetails: []
             });
             continue;
         }
@@ -83,8 +79,6 @@ export const processElective = async (
 }> => {
     const processedRequirement: ProcessedRequirement = {
         ...reqDetails,
-        coursesDetails: [],
-        courseGrpsDetails: [],
         completed: false,
         takenCourses: [],
         plannedCourses: [],
@@ -101,10 +95,6 @@ export const processElective = async (
         // if courseRef is a string, it is a courseId; otherwise it is an object
         const courseId = typeof courseRef === 'string' ? courseRef : courseRef.id;
         const grpIdentifier = typeof courseRef === 'string' ? undefined : courseRef.grpIdentifier;
-        
-        const courseDetails = await getCourse(courseId);
-        processedRequirement.coursesDetails.push(courseDetails);
-        if (!courseDetails || 'courseId' in courseDetails) continue;
 
         const matchingUserCourse = updatedUserCourses.find(userCourse => 
             userCourse.courseId === courseId && 
@@ -114,19 +104,19 @@ export const processElective = async (
         if (!matchingUserCourse) continue;
 
         if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
-            processedRequirement.takenCourses.push(courseDetails);
+            processedRequirement.takenCourses.push(matchingUserCourse);
         } else if (reqDetails.overlap?.some(reqid => 
             matchingUserCourse.usedInRequirements.includes(reqid)
         )) {
-            processedRequirement.eligibleButNotUsedCourses.push(courseDetails);
+            processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
         } else if (!reqDetails.overlap?.some(id => 
             matchingUserCourse.usedInRequirements.includes(id)
         )) {
             matchingUserCourse.usedInRequirements.push(reqDetails.id);
             if (matchingUserCourse.taken) {
-                processedRequirement.takenCourses.push(courseDetails);
+                processedRequirement.takenCourses.push(matchingUserCourse);
             } else {
-                processedRequirement.plannedCourses.push(courseDetails);
+                processedRequirement.plannedCourses.push(matchingUserCourse);
             }
         }
     }
@@ -153,9 +143,7 @@ export const processCore = async (
         completed: false,
         takenCourses: [],
         plannedCourses: [],
-        eligibleButNotUsedCourses: [],
-        coursesDetails: [],
-        courseGrpsDetails: []
+        eligibleButNotUsedCourses: []
     };
 
     if (!reqDetails.courseGrps) {
@@ -164,44 +152,34 @@ export const processCore = async (
 
     for (const group of reqDetails.courseGrps) {
 
-        const processedGroup: CourseGroupProcessed = {
-            ...group,
-            coursesProcessed: [],
-            groupCompleted: false
-        };
-
         for (const courseId of group.courses) {
-            const courseDetails = await getCourse(courseId);
-            if (!courseDetails || 'courseId' in courseDetails) continue;
-            processedGroup.coursesProcessed.push(courseDetails);
-
             const matchingUserCourse = userCourses.find(uc => 
                 uc.courseId === courseId
             );
 
             if (!matchingUserCourse) continue;
 
+            let completed = false;
+
             if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
-                processedRequirement.takenCourses.push(courseDetails);
-                processedGroup.groupCompleted = true;
+                processedRequirement.takenCourses.push(matchingUserCourse);
+                completed = true;
             } else if (reqDetails.overlap?.some(id => 
                 matchingUserCourse.usedInRequirements.includes(id)
             )) {
-                processedRequirement.eligibleButNotUsedCourses.push(courseDetails);
-            } else if (!processedGroup.groupCompleted) {
+                processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
+            } else if (!completed) {
                 matchingUserCourse.usedInRequirements.push(reqDetails.id);
                 if (matchingUserCourse.taken) {
-                    processedRequirement.takenCourses.push(courseDetails);
+                    processedRequirement.takenCourses.push(matchingUserCourse);
                 } else {
-                    processedRequirement.plannedCourses.push(courseDetails);
+                    processedRequirement.plannedCourses.push(matchingUserCourse);
                 }
-                processedGroup.groupCompleted = true;
+                completed = true;
             } else {
-                processedRequirement.eligibleButNotUsedCourses.push(courseDetails);
+                processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
             }
         }
-
-        processedRequirement.courseGrpsDetails.push(processedGroup);
     }
 
     processedRequirement.completed = 

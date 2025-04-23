@@ -2,7 +2,7 @@
 // Data structure and Firebase interactions
 
 import { db } from '../../db/firebase-admin';
-import { Course, CourseGroup, CourseGroupProcessed, NoDataCourse } from '../course/course.model';
+import { CourseGroup, CourseInSchedule } from '../course/course.model';
 
 // stored in the database
 export interface Requirement {
@@ -35,13 +35,17 @@ export interface ProcessedRequirement {
     descr: string[];
     number?: number; 
     overlap?: Array<string>;
-    
-    coursesDetails: Array<Course | NoDataCourse>; // changed from an array of strings to an array of Course objects
-    courseGrpsDetails: CourseGroupProcessed[]; 
+    courses?: Array<string | {
+        id: string;
+        grpIdentifier: string;
+    }>;
+    courseGrps?: Array<CourseGroup>;
+
+    // the folowing are added when the requirement is processed
     completed: boolean;
-    takenCourses: Course[];
-    plannedCourses: Course[];
-    eligibleButNotUsedCourses: Course[];
+    takenCourses: CourseInSchedule[];
+    plannedCourses: CourseInSchedule[];
+    eligibleButNotUsedCourses: CourseInSchedule[];
 }
 
 const requirementsCollection = db.collection('requirements');
