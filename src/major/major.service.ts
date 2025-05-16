@@ -80,7 +80,6 @@ export const getMajorWithRequirements = async (
         description: majorDetails.description,
         needsYear: majorDetails.needsYear,
         needsCollege: majorDetails.needsCollege,
-        requiredCourses: majorDetails.requiredCourses,
         basicRequirements,
         concentrationRequirements,
         endRequirements
@@ -250,8 +249,13 @@ export const getDefaultCollege = async (
     majorDetails: Major, 
     userDetails?: User
 ) : Promise<string> => {
-    // TODO: Implement this
-    return '';
+    // If user exists and their college is in the major's colleges, use it
+    if (userDetails && majorDetails.colleges.includes(userDetails.college)) {
+        return userDetails.college;
+    }
+
+    // Otherwise return the first college from the major's colleges
+    return majorDetails.colleges[0] || '';
 };
 
 
@@ -262,7 +266,12 @@ export const getDefaultYear = async (
     majorDetails: Major, 
     userDetails?: User
 ): Promise<number> => {
-    // TODO: Implement this
+    // If user exists, use their year
+    if (userDetails) {
+        return userDetails.year;
+    }
+
+    // Otherwise return the latest year
     return LATEST_YEAR;
 };
 
@@ -273,8 +282,12 @@ export const getDefaultYear = async (
 export const getConcentrations = async (
     majorDetails: Major
 ): Promise<string[]> => {
-    // TODO: Implement this
-    return [];
+    if (!majorDetails.concentrations) {
+        return [];
+    }
+
+    // Extract all concentration names from the major's concentrations
+    return majorDetails.concentrations.map(concentration => concentration.concentration);
 };
 
 

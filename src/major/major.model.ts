@@ -12,6 +12,7 @@ export interface Major {
     description?: string;
     needsYear: boolean;
     needsCollege: boolean;
+    colleges: string[];
     basicRequirements: Array<{
         year?: number;
         college?: string;
@@ -27,7 +28,6 @@ export interface Major {
         requirements: string[];
     }>;
     init: string[];
-    requiredCourses?: number;
     // other fields...
 }
 
@@ -38,7 +38,6 @@ export interface ProcessedMajor {
     description?: string;
     needsYear: boolean;
     needsCollege: boolean;
-    requiredCourses?: number;
     basicRequirements: ProcessedRequirement[];
     concentrationRequirements?: Array<{
         concentration: string;

@@ -4,6 +4,7 @@
 import * as RequirementModel from './requirement.model';
 import { Requirement, ProcessedRequirement } from './requirement.model';
 import { CourseInSchedule } from '../course/course.model';
+import { isTaken } from '../course/course.service';
 
 
 export const getRequirement = async (
@@ -113,7 +114,7 @@ export const processElective = async (
             matchingUserCourse.usedInRequirements.includes(id)
         )) {
             matchingUserCourse.usedInRequirements.push(reqDetails.id);
-            if (matchingUserCourse.taken) {
+            if (isTaken(matchingUserCourse)) {
                 processedRequirement.takenCourses.push(matchingUserCourse);
             } else {
                 processedRequirement.plannedCourses.push(matchingUserCourse);
@@ -170,7 +171,7 @@ export const processCore = async (
                 processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
             } else if (!completed) {
                 matchingUserCourse.usedInRequirements.push(reqDetails.id);
-                if (matchingUserCourse.taken) {
+                if (isTaken(matchingUserCourse)) {
                     processedRequirement.takenCourses.push(matchingUserCourse);
                 } else {
                     processedRequirement.plannedCourses.push(matchingUserCourse);

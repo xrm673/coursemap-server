@@ -1,15 +1,26 @@
 // src/user/user.model.ts
 // Data structure and Firebase interactions
 
+import { CourseInSchedule } from '../course/course.model';
 import { db } from '../../db/firebase-admin';
 
 
 export interface User {
-    id?: string;
-    email: string;
+    id: string;
+    netid?: string;
     name: string;
-    majorId: string;
     year: number;
+    college: string;
+    majors?: Array<{
+        id: string;
+        name: string;
+        college: string;
+        concentrations: Array<string>;
+    }>;
+    scheduleData?: Array<{
+        semester: string;
+        courses: CourseInSchedule[];
+    }>;
 }
 
 const usersCollection = db.collection('users');

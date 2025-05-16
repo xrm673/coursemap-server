@@ -5,7 +5,6 @@ import { db } from '../../db/firebase-admin';
 
 const coursesCollection = db.collection('courses');
 
-// TODO
 export interface Course {
   id: string;
   sbj: string;
@@ -156,8 +155,6 @@ export interface CourseInSchedule {
   credit: number; // the credits gained (would gain) from this course
   creditOptions: Array<number>; // the credits options of this course
   semester: string; // the semester that the course is planned or taken in
-  taken: boolean; // true if the course has been taken
-  planned: boolean; // true if the course has been planned
   qualified: boolean; // true if the course is qualified to take in the planned semester
   prereq?: Array<Array<string>>;
   coreq?: Array<Array<string>>;

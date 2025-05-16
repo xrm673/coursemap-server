@@ -18,15 +18,29 @@ export const getUser = async (netid: string): Promise<User> => {
 export const getUserCourses = async (
     userDetails: User
 ): Promise<CourseInSchedule[]> => {
-    // TODO: Implement this
-    return [];
+    if (!userDetails.scheduleData) {
+        return [];
+    }
+
+    // Flatten all courses from all semesters
+    return userDetails.scheduleData.reduce((allCourses, semesterData) => {
+        return [...allCourses, ...semesterData.courses];
+    }, [] as CourseInSchedule[]);
 };
 
 export const getUserConcentrations = async (
-    userDetails: User, majorDetails: Major
+    userDetails: User, 
+    majorDetails: Major
 ): Promise<string[]> => {
-    // TODO: Implement this
-    return [];
+    if (!userDetails.majors) {
+        return [];
+    }
+
+    // Find the major in user's majors array
+    const userMajor = userDetails.majors.find(major => major.id === majorDetails.id);
+    
+    // Return concentrations if found, otherwise empty array
+    return userMajor?.concentrations || [];
 };
 
 
