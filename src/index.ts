@@ -5,12 +5,13 @@ import { courseRouter } from './course/course.routes';
 import { majorRouter } from './major/major.routes';
 import { userRouter } from './user/user.routes';
 import { requirementRouter } from './requirement/requirement.routes';
+import { collegeRouter } from './college/college.routes';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
@@ -21,6 +22,7 @@ app.use('/api/courses', courseRouter);
 app.use('/api/majors', majorRouter); 
 app.use('/api/requirements', requirementRouter);
 app.use('/api/users', userRouter);
+app.use('/api/colleges', collegeRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
