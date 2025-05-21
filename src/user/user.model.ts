@@ -17,7 +17,7 @@ export interface User {
         id: string;
         name: string;
         college: string;
-        concentrations: Array<string>;
+        concentrations?: Array<string>;
     }>;
     scheduleData?: Array<{
         semester: string;

@@ -14,6 +14,7 @@ export interface LoginCredentials {
 export interface SignupData extends LoginCredentials {
   firstName: string;
   lastName: string;
+  netid: string;
   role?: 'student' | 'admin';
   year: number;
   college: string;
@@ -21,7 +22,7 @@ export interface SignupData extends LoginCredentials {
     id: string;
     name: string;
     college: string;
-    concentrations: Array<string>;
+    concentrations?: Array<string>;
   }>;
 }
 

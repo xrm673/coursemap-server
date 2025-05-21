@@ -54,8 +54,9 @@ export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
     firstName: signupData.firstName,
     lastName: signupData.lastName,
     passwordHash,
+    netid: signupData.netid,
     role: signupData.role || 'student',
-    uid: signupData.email, // Using email as uid for simplicity
+    uid: signupData.netid, // Using netid as uid for simplicity
     year: signupData.year,
     college: signupData.college,
     majors: signupData.majors
