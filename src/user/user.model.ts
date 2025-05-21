@@ -9,6 +9,8 @@ export interface User {
     email?: string;
     netid?: string; 
     name?: string;
+    firstName?: string;
+    lastName?: string;
     year?: number;
     college?: string;
     majors?: Array<{
@@ -26,6 +28,10 @@ export interface User {
         notifications?: boolean;
         // Add other user preferences as needed
     };
+    // Authentication fields
+    passwordHash?: string;
+    role?: 'student' | 'admin';
+    lastLogin?: Date;
 }
 
 const usersCollection = db.collection('users');

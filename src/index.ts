@@ -6,6 +6,7 @@ import { majorRouter } from './major/major.routes';
 import { userRouter } from './user/user.routes';
 import { requirementRouter } from './requirement/requirement.routes';
 import { collegeRouter } from './college/college.routes';
+import { authRouter } from './auth/auth.routes';
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
+app.use('/api/auth', authRouter);
 app.use('/api/courses', courseRouter);
 app.use('/api/majors', majorRouter); 
 app.use('/api/requirements', requirementRouter);
