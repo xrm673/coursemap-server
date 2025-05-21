@@ -17,11 +17,11 @@ export interface SignupData extends LoginCredentials {
   netid: string;
   role?: 'student' | 'admin';
   year: string;
-  college: string;
+  collegeId: string;
   majors: Array<{
     id: string;
     name: string;
-    college: string;
+    collegeId: string;
     concentrations?: Array<string>;
   }>;
 }

@@ -12,11 +12,11 @@ export interface User {
     firstName?: string;
     lastName?: string;
     year?: string;
-    college?: string;
+    collegeId?: string;
     majors?: Array<{
         id: string;
         name: string;
-        college: string;
+        collegeId: string;
         concentrations?: Array<string>;
     }>;
     scheduleData?: Array<{

@@ -57,7 +57,7 @@ export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
     netid: signupData.netid,
     role: signupData.role || 'student',
     year: signupData.year,
-    college: signupData.college,
+    collegeId: signupData.collegeId,
     majors: signupData.majors
   };
 

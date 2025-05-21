@@ -250,8 +250,8 @@ export const getDefaultCollege = async (
     userDetails?: User
 ) : Promise<string> => {
     // If user exists and their college is in the major's colleges, use it
-    if (userDetails && userDetails.college && majorDetails.colleges.includes(userDetails.college)) {
-        return userDetails.college;
+    if (userDetails && userDetails.collegeId && majorDetails.colleges.includes(userDetails.collegeId)) {
+        return userDetails.collegeId;
     }
 
     // Otherwise return the first college from the major's colleges
