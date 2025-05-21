@@ -1,15 +1,15 @@
 // src/college/college.routes.ts
-// Routes for colleges
+// API routes for colleges
 
-import { Router } from 'express';
-import * as CollegeController from './college.controller';
+import express from 'express';
+import { getColleges, getCollegeById } from './college.controller';
 
-const collegeRouter = Router();
+const collegeRouter = express.Router();
 
 // GET /api/colleges - Get all colleges
-collegeRouter.get('/', CollegeController.getAllColleges);
+collegeRouter.get('/', getColleges);
 
-// GET /api/colleges/:code - Get a college by its code
-collegeRouter.get('/:code', CollegeController.getCollegeByCode);
+// GET /api/colleges/:id - Get a college by its id
+collegeRouter.get('/:id', getCollegeById);
 
 export { collegeRouter };

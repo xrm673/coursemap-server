@@ -7,32 +7,33 @@ import * as CollegeService from './college.service';
 /*
     Get all colleges
 */
-export const getAllColleges = async (
-    req: Request, res: Response
-): Promise<void> => {
+export const getColleges = async (req: Request, res: Response): Promise<void> => {
     try {
-        const colleges = await CollegeService.getAllColleges();
+        const colleges = await CollegeService.getColleges();
         res.status(200).json(colleges);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve colleges' });
+        console.error('Error fetching colleges:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
 /*
-    Get a college by its code
+    Get a college by its id
 */
-export const getCollegeByCode = async (
-    req: Request, res: Response
+export const getCollegeById = async (
+    req: Request,
+    res: Response
 ): Promise<void> => {
     try {
-        const { code } = req.params;
-        const college = await CollegeService.getCollegeByCode(code);
+        const { id } = req.params;
+        const college = await CollegeService.getCollegeById(id);
         res.status(200).json(college);
     } catch (error) {
         if (error instanceof Error && error.message === 'College not found') {
-            res.status(404).json({ error: error.message });
+            res.status(404).json({ error: 'College not found' });
         } else {
-            res.status(500).json({ error: 'Failed to retrieve college' });
+            console.error('Error fetching college:', error);
+            res.status(500).json({ error: 'Internal server error' });
         }
     }
 };
