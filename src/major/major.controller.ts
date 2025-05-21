@@ -22,7 +22,7 @@ export const getMajorWithRequirements = async (
         majorId,
         userId as string | undefined,
         selectedCollege as string | undefined,
-        selectedYear ? Number(selectedYear) : undefined
+        selectedYear as string | undefined
     );
     
     res.status(200).json(result);

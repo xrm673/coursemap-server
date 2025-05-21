@@ -11,7 +11,7 @@ export interface User {
     name?: string;
     firstName?: string;
     lastName?: string;
-    year?: number;
+    year?: string;
     college?: string;
     majors?: Array<{
         id: string;

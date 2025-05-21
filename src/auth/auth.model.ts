@@ -16,7 +16,7 @@ export interface SignupData extends LoginCredentials {
   lastName: string;
   netid: string;
   role?: 'student' | 'admin';
-  year: number;
+  year: string;
   college: string;
   majors: Array<{
     id: string;

@@ -26,7 +26,7 @@ export const getMajorWithRequirements = async (
     majorId: string,
     userId?: string,
     selectedCollege?: string,
-    selectedYear?: number
+    selectedYear?: string
 ): Promise<{
     majorWithRequirements: ProcessedMajor,
     userCourses: CourseInSchedule[]
@@ -95,7 +95,7 @@ export const getBasicRequirements = async (
     majorDetails: Major,
     userDetails?: User,
     selectedCollege?: string,
-    selectedYear?: number
+    selectedYear?: string
 ): Promise<{
     basicRequirements: ProcessedRequirement[],
     userCoursesAfterBasic: CourseInSchedule[]
@@ -198,7 +198,7 @@ export const getEndRequirements = async (
     majorDetails: Major,
     userDetails?: User,
     selectedCollege?: string,
-    selectedYear?: number
+    selectedYear?: string
 ): Promise<{
     endRequirements: ProcessedRequirement[],
     userCoursesAfterEnd: CourseInSchedule[]
@@ -265,14 +265,14 @@ export const getDefaultCollege = async (
 export const getDefaultYear = async (
     majorDetails: Major, 
     userDetails?: User
-): Promise<number> => {
+): Promise<string> => {
     // If user exists, use their year
     if (userDetails && userDetails.year) {
         return userDetails.year;
     }
 
     // Otherwise return the latest year
-    return LATEST_YEAR;
+    return LATEST_YEAR.toString();
 };
 
 
