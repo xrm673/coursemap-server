@@ -45,8 +45,8 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
   return { uid: doc.id, ...doc.data() } as User;
 };
 
-export const updateUserLastLogin = async (userId: string): Promise<void> => {
-  await usersCollection.doc(userId).update({
+export const updateUserLastLogin = async (uid: string): Promise<void> => {
+  await usersCollection.doc(uid).update({
     lastLogin: new Date()
   });
 }; 

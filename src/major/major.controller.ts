@@ -16,11 +16,11 @@ export const getMajorWithRequirements = async (
     req: Request, res: Response
 ): Promise<void> => {
     const { majorId } = req.params;
-    const { userId, selectedCollege, selectedYear } = req.query;
+    const { uid, selectedCollege, selectedYear } = req.query;
     
     const result = await MajorService.getMajorWithRequirements(
         majorId,
-        userId as string | undefined,
+        uid as string | undefined,
         selectedCollege as string | undefined,
         selectedYear as string | undefined
     );

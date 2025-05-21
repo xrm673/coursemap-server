@@ -3,10 +3,11 @@
 
 import { Router } from 'express';
 import * as UserController from './user.controller';
+import { authenticate } from '../utils/middleware/auth.middleware';
 
 const userRouter = Router();
 
-userRouter.get('/:netid', UserController.getUser);
+userRouter.get('/me', authenticate, UserController.getUser);
 
 export { userRouter };
 

@@ -2,17 +2,24 @@
 // Business logic for users
 
 import * as UserModel from './user.model';
-import { User } from './user.model';
-import * as CourseModel from '../course/course.model';
-import { Course, CourseInSchedule } from '../course/course.model';
+import { User } from './user.model'; 
+import { CourseInSchedule } from '../course/course.model';
 import { Major } from '../major/major.model';
 
-export const getUser = async (netid: string): Promise<User> => {
-    const user = await UserModel.findById(netid);
-    if (!user) {
-        throw new Error('User not found');
+export class UserError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'UserError';
     }
-    return user;
+}
+
+export const getUser = async (uid: string): Promise<Omit<User, 'passwordHash'>> => {
+    const user = await UserModel.findById(uid);
+    if (!user) {
+        throw new UserError('User not found');
+    }
+    const { passwordHash, ...userData } = user;
+    return userData;
 };
 
 export const getUserCourses = async (

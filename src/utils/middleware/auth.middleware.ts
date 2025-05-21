@@ -11,7 +11,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        userId: string;
+        uid: string;
         email: string;
         role: string;
       };
@@ -34,7 +34,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as {
-      userId: string;
+      uid: string;
       email: string;
       role: string;
     };
@@ -50,19 +50,3 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     }
   }
 };
-
-export const requireRole = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
-    }
-
-    if (!roles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
-
-    next();
-  };
-}; 

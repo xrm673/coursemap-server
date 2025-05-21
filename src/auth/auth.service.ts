@@ -24,7 +24,7 @@ export const generateToken = (user: User): string => {
   }
 
   const payload = {
-    userId: user.uid,
+    uid: user.uid,
     email: user.email,
     role: user.role
   };
