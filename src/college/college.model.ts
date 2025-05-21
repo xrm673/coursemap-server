@@ -33,3 +33,23 @@ export const findById = async (id: string): Promise<College | null> => {
         ...doc.data() 
     } as College;
 };
+
+/*
+    Search colleges by major name
+*/
+export const searchByMajor = async (query: string): Promise<College[]> => {
+    const snapshot = await collegesCollection.get();
+    const colleges = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+    } as College));
+
+    return colleges
+        .map(college => ({
+            ...college,
+            majors: college.majors.filter(major => 
+                major.name.toLowerCase().includes(query.toLowerCase())
+            )
+        }))
+        .filter(college => college.majors.length > 0);
+};

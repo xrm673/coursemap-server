@@ -21,3 +21,13 @@ export const getCollegeById = async (id: string): Promise<College> => {
     }
     return college;
 };
+
+/*
+    Search colleges by major name
+*/
+export const searchCollegesByMajor = async (query: string): Promise<College[]> => {
+    if (!query) {
+        throw new Error('Search query is required');
+    }
+    return CollegeModel.searchByMajor(query);
+};
