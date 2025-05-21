@@ -56,7 +56,6 @@ export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
     passwordHash,
     netid: signupData.netid,
     role: signupData.role || 'student',
-    uid: signupData.netid, // Using netid as uid for simplicity
     year: signupData.year,
     college: signupData.college,
     majors: signupData.majors
@@ -85,6 +84,9 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
   }
 
   // Update last login
+  if (!user.uid) {
+    throw new AuthError('User ID is missing');
+  }
   await AuthModel.updateUserLastLogin(user.uid);
 
   const token = generateToken(user);

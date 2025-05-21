@@ -5,7 +5,7 @@ import { CourseInSchedule } from '../course/course.model';
 import { db } from '../../db/firebase-admin';
 
 export interface User {
-    uid: string;  // Firebase UID
+    uid?: string;  // Optional since it's set during creation
     email?: string;
     netid?: string; 
     name?: string;
