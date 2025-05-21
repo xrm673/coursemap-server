@@ -4,13 +4,13 @@
 import { CourseInSchedule } from '../course/course.model';
 import { db } from '../../db/firebase-admin';
 
-
 export interface User {
-    id: string;
-    netid?: string;
-    name: string;
-    year: number;
-    college: string;
+    uid: string;  // Firebase UID
+    email?: string;
+    netid?: string; 
+    name?: string;
+    year?: number;
+    college?: string;
     majors?: Array<{
         id: string;
         name: string;
@@ -21,16 +21,21 @@ export interface User {
         semester: string;
         courses: CourseInSchedule[];
     }>;
+    preferences?: {
+        theme?: string;
+        notifications?: boolean;
+        // Add other user preferences as needed
+    };
 }
 
 const usersCollection = db.collection('users');
 
 /*
-    Find a user by their NetID
+    Find a user by their Firebase UID
 */
-export const findById = async (netid: string): Promise<User | null> => {
-    const doc = await usersCollection.doc(netid).get();
+export const findById = async (uid: string): Promise<User | null> => {
+    const doc = await usersCollection.doc(uid).get();
     if (!doc.exists) return null;
-    return { id: doc.id, ...doc.data() } as User;
+    return { uid: doc.id, ...doc.data() } as User;
 };
 

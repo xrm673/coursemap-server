@@ -250,7 +250,7 @@ export const getDefaultCollege = async (
     userDetails?: User
 ) : Promise<string> => {
     // If user exists and their college is in the major's colleges, use it
-    if (userDetails && majorDetails.colleges.includes(userDetails.college)) {
+    if (userDetails && userDetails.college && majorDetails.colleges.includes(userDetails.college)) {
         return userDetails.college;
     }
 
@@ -267,7 +267,7 @@ export const getDefaultYear = async (
     userDetails?: User
 ): Promise<number> => {
     // If user exists, use their year
-    if (userDetails) {
+    if (userDetails && userDetails.year) {
         return userDetails.year;
     }
 
