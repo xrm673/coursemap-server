@@ -6,10 +6,18 @@ import * as CourseModel from './course.model';
 import { Course, NoDataCourse, CourseInSchedule } from './course.model';
 
 
-export const getCourse = async (courseId: string): Promise<Course | NoDataCourse> => {
+export const getCourse = async (courseId: string, ttl?: string): Promise<Course | NoDataCourse> => {
   const course = await CourseModel.findById(courseId);
   if (!course) {
-    return {courseId: courseId};
+    // Extract the subject (letters) from the courseId
+    const subject = courseId.match(/^[A-Za-z]+/)?.[0] || '';
+    return {
+      courseId: courseId,
+      sbj: subject,
+      nbr: courseId.slice(subject.length), // Get the number part
+      ttl: ttl || 'No data', // Include ttl if provided
+      noData: true,
+    };
   }
   return course;
 };

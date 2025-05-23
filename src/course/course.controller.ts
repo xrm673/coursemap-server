@@ -7,7 +7,8 @@ import * as CourseService from './course.service';
 export const getCourseById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const course = await CourseService.getCourse(id);
+    const { ttl } = req.query;
+    const course = await CourseService.getCourse(id, ttl as string | undefined);
     res.status(200).json(course);
   } catch (error) {
     console.error(`Error fetching course ${req.params.id}:`, error);

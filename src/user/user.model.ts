@@ -8,7 +8,6 @@ export interface User {
     uid?: string;  // Optional since it's set during creation
     email?: string;
     netid?: string; 
-    name?: string;
     firstName?: string;
     lastName?: string;
     year?: string;

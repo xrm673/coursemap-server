@@ -3,7 +3,7 @@
 
 import { db } from '../../db/firebase-admin';
 
-const coursesCollection = db.collection('courses');
+const coursesCollection = db.collection('coursesNew');
 
 export interface Course {
   id: string;
@@ -35,7 +35,7 @@ export interface Course {
   subfield?: string;
   career?: string;
   acadgrp?: string;
-  enrollmentGroups : Array<
+  enrollGroups : Array<
     {
       // identifier of the enrollment group
       // 1. If any section of the enrollment group has a topic, 
@@ -141,6 +141,10 @@ export interface Course {
 
 export interface NoDataCourse {
   courseId: string;
+  sbj: string;
+  nbr: string;
+  ttl: string;
+  noData: boolean;
 }
 
 
