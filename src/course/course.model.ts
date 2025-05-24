@@ -3,7 +3,7 @@
 
 import { db } from '../../db/firebase-admin';
 
-const coursesCollection = db.collection('coursesNew');
+const coursesCollection = db.collection('courses');
 
 export interface Course {
   id: string;
@@ -100,8 +100,8 @@ export interface Course {
       // only for semesters in current year (max length 4)
       sections?: Array<{
         semester: string; //  must be in current year
-        sections: Array<{
-          tp: string; // "LEC", "LAB", "DIS", "IND", etc.
+        secInfo: Array<{
+          type: string; // "LEC", "LAB", "DIS", "IND", etc.
           nbr: string; // "001", "601", etc.
           meetings: Array<{
             no: number; // "1", "2", etc.
@@ -110,6 +110,8 @@ export interface Course {
             stDt: string; // "08/25/2025"
             edDt: string; // "12/13/2025"
             pt: string; // "MW", "TH", etc.
+            instructors: string[]; // list of instructors netids
+            topic?: string; // topic of the meeting
           }>;
           open?: string; // "C" for closed, "W" for waitlist
           mode?: string; // not displayed if in-person
@@ -180,8 +182,8 @@ export interface CourseInSchedule {
     mode?: string; 
     // list of compoenents (sections) in the latest semester provided
     components: Array<string>; // e.g., ["LEC", "DIS"]
-    sections: Array<{
-      tp: string; // "LEC", "LAB", "DIS", "IND", etc.
+    secInfo: Array<{
+      type: string; // "LEC", "LAB", "DIS", "IND", etc.
       nbr: string; // "001", "601", etc.
       meetings: Array<{
         no: number; // "1", "2", etc.
@@ -190,6 +192,8 @@ export interface CourseInSchedule {
         stDt: string; // "08/25/2025"
         edDt: string; // "12/13/2025"
         pt: string; // "MW", "TH", etc.
+        instructors: string[]; // list of instructors netids
+        topic?: string; // topic of the meeting
       }>;
       selected: boolean; // true if the section is selected
       open: boolean; // true if the section is open
