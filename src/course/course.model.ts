@@ -103,7 +103,14 @@ export interface Course {
         sections: Array<{
           tp: string; // "LEC", "LAB", "DIS", "IND", etc.
           nbr: string; // "001", "601", etc.
-          time: Array<string>; // ["MW 12:20-13:10", "TH 12:20-13:10"]
+          meetings: Array<{
+            no: number; // "1", "2", etc.
+            stTm: string; // "01:25PM"
+            edTm: string; // "02:40PM"
+            stDt: string; // "08/25/2025"
+            edDt: string; // "12/13/2025"
+            pt: string; // "MW", "TH", etc.
+          }>;
           open?: string; // "C" for closed, "W" for waitlist
           mode?: string; // not displayed if in-person
           location?: string; // only displayed if it's not offered in Ithaca
@@ -168,15 +175,23 @@ export interface CourseInSchedule {
   
   // if the grpIdentifier is specified, display the specified group
   // otherwise, display all groups
-  groups: Array<{
+  enrollGroups: Array<{
     grpIdentifier?: string;
     mode?: string; 
+    // list of compoenents (sections) in the latest semester provided
+    components: Array<string>; // e.g., ["LEC", "DIS"]
     sections: Array<{
       tp: string; // "LEC", "LAB", "DIS", "IND", etc.
       nbr: string; // "001", "601", etc.
-      time: Array<string>; // ["MW 12:20-13:10", "TH 12:20-13:10"]
+      meetings: Array<{
+        no: number; // "1", "2", etc.
+        stTm: string; // "01:25PM"
+        edTm: string; // "02:40PM"
+        stDt: string; // "08/25/2025"
+        edDt: string; // "12/13/2025"
+        pt: string; // "MW", "TH", etc.
+      }>;
       selected: boolean; // true if the section is selected
-      favorite: boolean; // true if the section is a favorite
       open: boolean; // true if the section is open
       mode?: string; // not displayed if same as the mode of the group
     }>;

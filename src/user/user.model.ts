@@ -22,6 +22,7 @@ export interface User {
         semester: string;
         courses: CourseInSchedule[];
     }>;
+    favored?: CourseInSchedule[];
     preferences?: {
         theme?: string;
         notifications?: boolean;
