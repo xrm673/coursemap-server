@@ -149,16 +149,20 @@ export interface Course {
 }
 
 export interface NoDataCourse {
-  courseId: string;
+  id: string;
   sbj: string;
   nbr: string;
   ttl: string;
   noData: boolean;
 }
 
+export interface CourseFavored {
+  id: string;
+  grpIdentifier?: string;
+}
 
 export interface CourseInSchedule {
-  courseId: string;
+  id: string;
   sbj: string;
   nbr: string;
   tts: string;
@@ -177,27 +181,28 @@ export interface CourseInSchedule {
   
   // if the grpIdentifier is specified, display the specified group
   // otherwise, display all groups
-  enrollGroups: Array<{
+  groups: Array<{
     grpIdentifier?: string;
     mode?: string; 
-    // list of compoenents (sections) in the latest semester provided
-    components: Array<string>; // e.g., ["LEC", "DIS"]
-    secInfo: Array<{
-      type: string; // "LEC", "LAB", "DIS", "IND", etc.
-      nbr: string; // "001", "601", etc.
-      meetings: Array<{
-        no: number; // "1", "2", etc.
-        stTm: string; // "01:25PM"
-        edTm: string; // "02:40PM"
-        stDt: string; // "08/25/2025"
-        edDt: string; // "12/13/2025"
-        pt: string; // "MW", "TH", etc.
-        instructors: string[]; // list of instructors netids
-        topic?: string; // topic of the meeting
+    sections?: Array<{
+      semester: string; //  must be in current year
+      secInfo: Array<{
+        type: string; // "LEC", "LAB", "DIS", "IND", etc.
+        nbr: string; // "001", "601", etc.
+        meetings: Array<{
+          no: number; // "1", "2", etc.
+          stTm: string; // "01:25PM"
+          edTm: string; // "02:40PM"
+          stDt: string; // "08/25/2025"
+          edDt: string; // "12/13/2025"
+          pt: string; // "MW", "TH", etc.
+          instructors: string[]; // list of instructors netids
+          topic?: string; // topic of the meeting
+        }>;
+        open?: string; // "C" for closed, "W" for waitlist
+        mode?: string; // not displayed if in-person
+        location?: string; // only displayed if it's not offered in Ithaca
       }>;
-      selected: boolean; // true if the section is selected
-      open: boolean; // true if the section is open
-      mode?: string; // not displayed if same as the mode of the group
     }>;
     limitation?: string;
     grpprereq?: Array<Array<string>>;

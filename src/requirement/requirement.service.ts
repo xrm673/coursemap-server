@@ -98,7 +98,7 @@ export const processElective = async (
         const grpIdentifier = typeof courseRef === 'string' ? undefined : courseRef.grpIdentifier;
 
         const matchingUserCourse = updatedUserCourses.find(userCourse => 
-            userCourse.courseId === courseId && 
+            userCourse.id === courseId && 
             (!grpIdentifier || userCourse.grpIdentifier === grpIdentifier)
         );
 
@@ -155,7 +155,7 @@ export const processCore = async (
 
         for (const courseId of group.courses) {
             const matchingUserCourse = userCourses.find(uc => 
-                uc.courseId === courseId
+                uc.id === courseId
             );
 
             if (!matchingUserCourse) continue;
