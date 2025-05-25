@@ -13,6 +13,7 @@ export interface Course {
   smst: Array<string>; // semester offered
   ttl: string; // title (long)
   tts: string; // title (short)
+  grpIdentifier?: string; // only specified when the course has topic and has one enrol group
   dsrpn: string; // description
   cmts?: string; // comments
   rcmdReq?: string; //recommend Prerequisite or Corequisite requirement in text
