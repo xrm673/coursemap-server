@@ -1,7 +1,7 @@
 // src/user/user.model.ts
 // Data structure and Firebase interactions
 
-import { CourseInSchedule } from '../course/course.model';
+import { CourseFavored, CourseInSchedule } from '../course/course.model';
 import { db } from '../../db/firebase-admin';
 
 export interface User {
@@ -22,7 +22,7 @@ export interface User {
         semester: string;
         courses: CourseInSchedule[];
     }>;
-    favored?: CourseInSchedule[];
+    favoredCourses?: CourseFavored[];
     preferences?: {
         theme?: string;
         notifications?: boolean;
@@ -34,7 +34,7 @@ export interface User {
     lastLogin?: Date;
 }
 
-const usersCollection = db.collection('users');
+export const usersCollection = db.collection('users');
 
 /*
     Find a user by their Firebase UID
