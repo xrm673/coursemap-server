@@ -22,9 +22,7 @@ export const getUser = async (uid: string): Promise<Omit<User, 'passwordHash'>> 
     return userData;
 };
 
-export const getUserCourses = async (
-    userDetails: User
-): Promise<CourseInSchedule[]> => {
+export const getUserCourses = (userDetails: User): CourseInSchedule[] => {
     if (!userDetails.scheduleData) {
         return [];
     }
@@ -35,10 +33,10 @@ export const getUserCourses = async (
     }, [] as CourseInSchedule[]);
 };
 
-export const getUserConcentrations = async (
+export const getUserConcentrations = (
     userDetails: User, 
     majorDetails: Major
-): Promise<string[]> => {
+): string[] => {
     if (!userDetails.majors) {
         return [];
     }

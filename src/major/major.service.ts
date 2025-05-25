@@ -101,10 +101,10 @@ export const getBasicRequirements = async (
     userCoursesAfterBasic: CourseInSchedule[]
 }> => {
     if (!selectedCollege) {
-        selectedCollege = await getDefaultCollege(majorDetails, userDetails);
+        selectedCollege = getDefaultCollege(majorDetails, userDetails);
     }
     if (!selectedYear) {
-        selectedYear = await getDefaultYear(majorDetails, userDetails);
+        selectedYear = getDefaultYear(userDetails);
     }
 
     const basicReqs = majorDetails.basicRequirements?.find(
@@ -117,7 +117,7 @@ export const getBasicRequirements = async (
 
     let userCourses: CourseInSchedule[] = [];
     if (userDetails) {
-        userCourses = await getUserCourses(userDetails);
+        userCourses = getUserCourses(userDetails);
     }
 
     if (!basicReqs) {
@@ -159,7 +159,7 @@ export const getConcentrationRequirements = async (
         };
     }
 
-    const userConcentrations = await getUserConcentrations(userDetails, majorDetails);
+    const userConcentrations = getUserConcentrations(userDetails, majorDetails);
     let userCourses: CourseInSchedule[] = [];
     const concentrationRequirements: Array<{
         concentration: string;
@@ -204,10 +204,10 @@ export const getEndRequirements = async (
     userCoursesAfterEnd: CourseInSchedule[]
 }> => {
     if (!selectedCollege) {
-        selectedCollege = await getDefaultCollege(majorDetails, userDetails);
+        selectedCollege = getDefaultCollege(majorDetails, userDetails);
     }
     if (!selectedYear) {
-        selectedYear = await getDefaultYear(majorDetails, userDetails);
+        selectedYear = getDefaultYear(userDetails);
     }
 
     const endReqs = majorDetails.endRequirements?.find(
@@ -220,7 +220,7 @@ export const getEndRequirements = async (
 
     let userCourses: CourseInSchedule[] = [];
     if (userDetails) {
-        userCourses = await getUserCourses(userDetails);
+        userCourses = getUserCourses(userDetails);
     }
 
     if (!endReqs) {
@@ -245,10 +245,7 @@ export const getEndRequirements = async (
 /*
     Return the default college a user should select for a major
 */
-export const getDefaultCollege = async (
-    majorDetails: Major, 
-    userDetails?: User
-) : Promise<string> => {
+export const getDefaultCollege = (majorDetails: Major, userDetails?: User) : string => {
     // If user exists and their college is in the major's colleges, use it
     if (userDetails && userDetails.collegeId && majorDetails.colleges.includes(userDetails.collegeId)) {
         return userDetails.collegeId;
@@ -262,10 +259,7 @@ export const getDefaultCollege = async (
 /*
     Return the default year a user should select for a major
 */
-export const getDefaultYear = async (
-    majorDetails: Major, 
-    userDetails?: User
-): Promise<string> => {
+export const getDefaultYear = (userDetails?: User): string => {
     // If user exists, use their year
     if (userDetails && userDetails.year) {
         return userDetails.year;
@@ -279,9 +273,7 @@ export const getDefaultYear = async (
 /*
     Return the concentrations of a major
 */
-export const getConcentrations = async (
-    majorDetails: Major
-): Promise<string[]> => {
+export const getConcentrations = (majorDetails: Major): string[] => {
     if (!majorDetails.concentrations) {
         return [];
     }
