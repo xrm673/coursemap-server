@@ -50,3 +50,38 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     }
   }
 };
+
+export const optionalAuthenticate = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      next();
+      return;
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      next();
+      return;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      uid: string;
+      email: string;
+      role: string;
+    };
+
+    req.user = decoded;
+    next();
+  } catch (error) {
+    // If token verification fails, continue without setting user
+    if (error instanceof jwt.TokenExpiredError) {
+      console.log('Token expired, continuing as unauthenticated request');
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      console.log('Invalid token, continuing as unauthenticated request');
+    } else {
+      console.error('Unexpected authentication error:', error);
+    }
+    next();
+  }
+};
