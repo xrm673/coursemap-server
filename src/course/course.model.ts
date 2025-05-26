@@ -164,52 +164,13 @@ export interface CourseFavored {
 
 export interface CourseInSchedule {
   id: string;
-  sbj: string;
-  nbr: string;
-  tts: string;
-  hasTopic: boolean;
-  grpIdentifier?: string; // must be specified if hasTopic is true
+  grpIdentifier?: string; // must be specified if course has topic
   usedInRequirements: Array<string>; // list of requirements that use this course
   credit: number; // the credits gained (would gain) from this course
-  creditOptions: Array<number>; // the credits options of this course
   semester: string; // the semester that the course is planned or taken in
-  qualified: boolean; // true if the course is qualified to take in the planned semester
-  prereq?: Array<Array<string>>;
-  coreq?: Array<Array<string>>;
-  preco?: Array<Array<string>>;
-  ovlp?: Array<string>; // overlap courses
-  repeatWarning: boolean; // true if the course has been planned or taken in other semesters
-  
-  // if the grpIdentifier is specified, display the specified group
-  // otherwise, display all groups
-  groups: Array<{
-    grpIdentifier?: string;
-    mode?: string; 
-    sections?: Array<{
-      semester: string; //  must be in current year
-      secInfo: Array<{
-        type: string; // "LEC", "LAB", "DIS", "IND", etc.
-        nbr: string; // "001", "601", etc.
-        meetings: Array<{
-          no: number; // "1", "2", etc.
-          stTm: string; // "01:25PM"
-          edTm: string; // "02:40PM"
-          stDt: string; // "08/25/2025"
-          edDt: string; // "12/13/2025"
-          pt: string; // "MW", "TH", etc.
-          instructors: string[]; // list of instructors netids
-          topic?: string; // topic of the meeting
-        }>;
-        open?: string; // "C" for closed, "W" for waitlist
-        mode?: string; // not displayed if in-person
-        location?: string; // only displayed if it's not offered in Ithaca
-      }>;
-    }>;
-    limitation?: string;
-    grpprereq?: Array<Array<string>>;
-    grpcoreq?: Array<Array<string>>;
-    grppreco?: Array<Array<string>>;
-  }>;
+  sections?: Array<string>; // list of sections (e.g., "LEC-001", "DIS-601", etc.)
+  // qualified: boolean; // true if the course is qualified to take in the planned semester
+  // repeatWarning: boolean; // true if the course has been planned or taken in other semesters
 }
 
 export interface CourseGroup {
