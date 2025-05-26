@@ -25,7 +25,7 @@ export const getMajor = async (majorId: string): Promise<Major> => {
 export const getMajorWithRequirements = async (
     majorId: string,
     uid?: string,
-    selectedCollege?: string,
+    selectedCollegeId?: string,
     selectedYear?: string
 ): Promise<{
     majorWithRequirements: ProcessedMajor,
@@ -45,10 +45,17 @@ export const getMajorWithRequirements = async (
         userDetails = await getUser(uid);
     }
 
+    if (!selectedCollegeId) {
+        selectedCollegeId = getDefaultCollege(majorDetails, userDetails);
+    }
+    if (!selectedYear) {
+        selectedYear = getDefaultYear(userDetails);
+    }
+
     const {
         basicRequirements: basicReqs, userCoursesAfterBasic
     } = await getBasicRequirements(
-        majorDetails, userDetails, selectedCollege, selectedYear
+        majorDetails, selectedCollegeId, selectedYear, userDetails
     );
     basicRequirements = basicReqs;
     userCourses = userCoursesAfterBasic;
@@ -68,7 +75,7 @@ export const getMajorWithRequirements = async (
         const {
             endRequirements: endReqs, userCoursesAfterEnd
         } = await getEndRequirements(
-            majorDetails, userDetails, selectedCollege, selectedYear
+            majorDetails, selectedCollegeId, selectedYear, userDetails
         );
         endRequirements = endReqs;
         userCourses = userCoursesAfterEnd;
@@ -80,6 +87,9 @@ export const getMajorWithRequirements = async (
         description: majorDetails.description,
         needsYear: majorDetails.needsYear,
         needsCollege: majorDetails.needsCollege,
+        colleges: majorDetails.colleges,
+        selectedCollegeId,
+        selectedYear,
         basicRequirements,
         concentrationRequirements,
         endRequirements
@@ -93,24 +103,17 @@ export const getMajorWithRequirements = async (
 */
 export const getBasicRequirements = async (
     majorDetails: Major,
-    userDetails?: User,
-    selectedCollege?: string,
-    selectedYear?: string
+    selectedCollegeId: string,
+    selectedYear: string,
+    userDetails?: User
 ): Promise<{
     basicRequirements: ProcessedRequirement[],
     userCoursesAfterBasic: CourseInSchedule[]
 }> => {
-    if (!selectedCollege) {
-        selectedCollege = getDefaultCollege(majorDetails, userDetails);
-    }
-    if (!selectedYear) {
-        selectedYear = getDefaultYear(userDetails);
-    }
-
     const basicReqs = majorDetails.basicRequirements?.find(
         req => {
           const yearMatches = !majorDetails.needsYear || req.year === selectedYear;
-          const collegeMatches = !majorDetails.needsCollege || req.college === selectedCollege;
+          const collegeMatches = !majorDetails.needsCollege || req.college === selectedCollegeId;
           return yearMatches && collegeMatches;
         }
     );
@@ -196,24 +199,18 @@ export const getConcentrationRequirements = async (
 */
 export const getEndRequirements = async (
     majorDetails: Major,
+    selectedCollegeId: string,
+    selectedYear: string,
     userDetails?: User,
-    selectedCollege?: string,
-    selectedYear?: string
 ): Promise<{
     endRequirements: ProcessedRequirement[],
     userCoursesAfterEnd: CourseInSchedule[]
 }> => {
-    if (!selectedCollege) {
-        selectedCollege = getDefaultCollege(majorDetails, userDetails);
-    }
-    if (!selectedYear) {
-        selectedYear = getDefaultYear(userDetails);
-    }
 
     const endReqs = majorDetails.endRequirements?.find(
         req => {
             const yearMatches = !majorDetails.needsYear || req.year === selectedYear;
-            const collegeMatches = !majorDetails.needsCollege || req.college === selectedCollege;
+            const collegeMatches = !majorDetails.needsCollege || req.college === selectedCollegeId;
             return yearMatches && collegeMatches;
         }
     );
@@ -247,12 +244,12 @@ export const getEndRequirements = async (
 */
 export const getDefaultCollege = (majorDetails: Major, userDetails?: User) : string => {
     // If user exists and their college is in the major's colleges, use it
-    if (userDetails && userDetails.collegeId && majorDetails.colleges.includes(userDetails.collegeId)) {
+    if (userDetails && userDetails.collegeId && majorDetails.colleges.find(college => college.id === userDetails.collegeId)) {
         return userDetails.collegeId;
     }
 
     // Otherwise return the first college from the major's colleges
-    return majorDetails.colleges[0] || '';
+    return majorDetails.colleges[0]?.id || '';
 };
 
 

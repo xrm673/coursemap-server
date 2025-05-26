@@ -12,7 +12,10 @@ export interface Major {
     description?: string;
     needsYear: boolean;
     needsCollege: boolean;
-    colleges: string[];
+    colleges: Array<{
+        id: string;
+        name: string;
+    }>;
     basicRequirements: Array<{
         year?: string;
         college?: string;
@@ -38,6 +41,12 @@ export interface ProcessedMajor {
     description?: string;
     needsYear: boolean;
     needsCollege: boolean;
+    colleges: Array<{
+        id: string;
+        name: string;
+    }>;
+    selectedCollegeId: string;
+    selectedYear: string;
     basicRequirements: ProcessedRequirement[];
     concentrationRequirements?: Array<{
         concentration: string;
