@@ -136,14 +136,7 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
     }
 };
 
-export const addCourseToSchedule = async (uid: string, courseData: {
-    courseId: string;
-    semester: string;
-    grpIdentifier?: string;
-    credit: number;
-    sections?: string[];
-    usedInRequirements: string[];
-}): Promise<User> => {
+export const addCourseToSchedule = async (uid: string, courseData: CourseInSchedule): Promise<User> => {
     try {
         const user = await UserModel.findById(uid);
         if (!user) {
@@ -158,7 +151,7 @@ export const addCourseToSchedule = async (uid: string, courseData: {
         // Check for exact duplicate in the same semester
         const isDuplicate = user.scheduleData.some(course => 
             course.semester === courseData.semester &&
-            course.id === courseData.courseId &&
+            course.id === courseData.id &&
             (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
         );
 
@@ -168,7 +161,7 @@ export const addCourseToSchedule = async (uid: string, courseData: {
 
         // Add the new course
         const newCourse: CourseInSchedule = {
-            id: courseData.courseId,
+            id: courseData.id,
             semester: courseData.semester,
             credit: courseData.credit,
             usedInRequirements: courseData.usedInRequirements
@@ -197,7 +190,7 @@ export const addCourseToSchedule = async (uid: string, courseData: {
 };
 
 export const deleteCourseFromSchedule = async (uid: string, courseData: {
-    courseId: string;
+    id: string;
     semester: string;
     grpIdentifier?: string;
 }): Promise<void> => {
@@ -214,7 +207,7 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
         // Find the course index
         const courseIndex = user.scheduleData.findIndex(course => 
             course.semester === courseData.semester &&
-            course.id === courseData.courseId &&
+            course.id === courseData.id &&
             (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
         );
 
