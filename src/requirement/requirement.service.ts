@@ -105,7 +105,11 @@ export const processElective = async (
         if (!matchingUserCourse) continue;
 
         if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
-            processedRequirement.takenCourses.push(matchingUserCourse);
+            if (isTaken(matchingUserCourse)) {
+                processedRequirement.takenCourses.push(matchingUserCourse);
+            } else {
+                processedRequirement.plannedCourses.push(matchingUserCourse);
+            }
         } else if (reqDetails.overlap?.some(reqid => 
             matchingUserCourse.usedInRequirements.includes(reqid)
         )) {
@@ -163,7 +167,11 @@ export const processCore = async (
             let completed = false;
 
             if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
-                processedRequirement.takenCourses.push(matchingUserCourse);
+                if (isTaken(matchingUserCourse)) {
+                    processedRequirement.takenCourses.push(matchingUserCourse);
+                } else {
+                    processedRequirement.plannedCourses.push(matchingUserCourse);
+                }
                 completed = true;
             } else if (reqDetails.overlap?.some(id => 
                 matchingUserCourse.usedInRequirements.includes(id)

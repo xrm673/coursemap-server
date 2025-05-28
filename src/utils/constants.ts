@@ -10,5 +10,5 @@ export const plannedSemesters = [
 export const takenSemesters = [
     "FA22", "WI23", "SP23", "SU23", 
     "FA23", "WI24", "SP24", "SU24", 
-    "FA24", "WI25", "SP25", "SU25"
+    "FA24", "WI25", "SP25", "SU25", "unspecified"
 ];
