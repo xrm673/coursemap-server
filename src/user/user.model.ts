@@ -18,10 +18,7 @@ export interface User {
         collegeId: string;
         concentrations?: Array<string>;
     }>;
-    scheduleData?: Array<{
-        semester: string;
-        courses: CourseInSchedule[];
-    }>;
+    scheduleData?: CourseInSchedule[];
     favoredCourses?: CourseFavored[];
     preferences?: {
         theme?: string;

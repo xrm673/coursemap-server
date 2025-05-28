@@ -23,14 +23,7 @@ export const getUser = async (uid: string): Promise<Omit<User, 'passwordHash'>> 
 };
 
 export const getUserCourses = (userDetails: User): CourseInSchedule[] => {
-    if (!userDetails.scheduleData) {
-        return [];
-    }
-
-    // Flatten all courses from all semesters
-    return userDetails.scheduleData.reduce((allCourses, semesterData) => {
-        return [...allCourses, ...semesterData.courses];
-    }, [] as CourseInSchedule[]);
+    return userDetails.scheduleData || [];
 };
 
 export const getUserConcentrations = (
@@ -163,31 +156,14 @@ export const addCourseToSchedule = async (uid: string, courseData: {
         }
 
         // Check for exact duplicate in the same semester
-        const isDuplicate = user.scheduleData.some(semesterData => 
-            semesterData.semester === courseData.semester &&
-            semesterData.courses.some(existingCourse => {
-                if (courseData.grpIdentifier) {
-                    return existingCourse.id === courseData.courseId && 
-                           existingCourse.grpIdentifier === courseData.grpIdentifier;
-                } else {
-                    return existingCourse.id === courseData.courseId && 
-                           !existingCourse.grpIdentifier;
-                }
-            })
+        const isDuplicate = user.scheduleData.some(course => 
+            course.semester === courseData.semester &&
+            course.id === courseData.courseId &&
+            (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
         );
 
         if (isDuplicate) {
             throw new UserError('This exact course is already in your schedule for this semester');
-        }
-
-        // Find or create semester data
-        let semesterData = user.scheduleData.find(data => data.semester === courseData.semester);
-        if (!semesterData) {
-            semesterData = {
-                semester: courseData.semester,
-                courses: []
-            };
-            user.scheduleData.push(semesterData);
         }
 
         // Add the new course
@@ -206,7 +182,7 @@ export const addCourseToSchedule = async (uid: string, courseData: {
             newCourse.sections = courseData.sections;
         }
 
-        semesterData.courses.push(newCourse);
+        user.scheduleData.push(newCourse);
 
         // Update user document in Firebase
         await UserModel.usersCollection.doc(uid).update({
@@ -235,34 +211,19 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
             throw new UserError('No schedule data found');
         }
 
-        // Find the semester
-        const semesterIndex = user.scheduleData.findIndex(data => data.semester === courseData.semester);
-        if (semesterIndex === -1) {
-            throw new UserError('Semester not found in schedule');
-        }
-
-        // Find the course in the semester
-        const courseIndex = user.scheduleData[semesterIndex].courses.findIndex(course => {
-            if (courseData.grpIdentifier) {
-                return course.id === courseData.courseId && 
-                       course.grpIdentifier === courseData.grpIdentifier;
-            } else {
-                return course.id === courseData.courseId && 
-                       !course.grpIdentifier;
-            }
-        });
+        // Find the course index
+        const courseIndex = user.scheduleData.findIndex(course => 
+            course.semester === courseData.semester &&
+            course.id === courseData.courseId &&
+            (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+        );
 
         if (courseIndex === -1) {
             throw new UserError('Course not found in schedule');
         }
 
         // Remove the course
-        user.scheduleData[semesterIndex].courses.splice(courseIndex, 1);
-
-        // If semester is empty, remove it too
-        if (user.scheduleData[semesterIndex].courses.length === 0) {
-            user.scheduleData.splice(semesterIndex, 1);
-        }
+        user.scheduleData.splice(courseIndex, 1);
 
         // Update user document in Firebase
         await UserModel.usersCollection.doc(uid).update({
