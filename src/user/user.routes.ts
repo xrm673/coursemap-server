@@ -11,6 +11,8 @@ userRouter.get('/me', authenticate, UserController.getUser);
 userRouter.get('/me/favorites', authenticate, UserController.getFavoredCourses);
 userRouter.post('/me/favorites', authenticate, UserController.addFavoredCourse);
 userRouter.delete('/me/favorites', authenticate, UserController.deleteFavoredCourse);
+userRouter.post('/me/schedule', authenticate, UserController.addCourseToSchedule);
+userRouter.delete('/me/schedule', authenticate, UserController.deleteCourseFromSchedule);
 
 export { userRouter };
 

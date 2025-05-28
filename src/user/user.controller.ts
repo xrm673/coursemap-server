@@ -127,3 +127,103 @@ export const deleteFavoredCourse = async (req: Request, res: Response): Promise<
     }
 };
 
+export const addCourseToSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const requestingUser = req.user;
+        if (!requestingUser) {
+            res.status(401).json({ error: 'Authentication required' });
+            return;
+        }
+
+        const { courseId, semester, grpIdentifier, credit, sections, usedInRequirements } = req.body;
+        
+        // Validate required fields
+        if (!courseId || !semester || credit === undefined || !usedInRequirements) {
+            res.status(400).json({ error: 'Missing required fields: courseId, semester, credit, and usedInRequirements are required' });
+            return;
+        }
+
+        // Validate credit is a number
+        if (typeof credit !== 'number') {
+            res.status(400).json({ error: 'Credit must be a number' });
+            return;
+        }
+
+        // Validate usedInRequirements is an array
+        if (!Array.isArray(usedInRequirements)) {
+            res.status(400).json({ error: 'usedInRequirements must be an array' });
+            return;
+        }
+
+        // Validate sections if provided
+        if (sections !== undefined && !Array.isArray(sections)) {
+            res.status(400).json({ error: 'Sections must be an array' });
+            return;
+        }
+
+        const updatedUser = await UserService.addCourseToSchedule(requestingUser.uid, {
+            courseId,
+            semester,
+            grpIdentifier,
+            credit,
+            sections,
+            usedInRequirements
+        });
+
+        res.status(200).json({
+            message: 'Course added to schedule',
+            scheduleData: updatedUser.scheduleData
+        });
+    } catch (error) {
+        if (error instanceof UserService.UserError) {
+            if (error.message === 'User not found') {
+                res.status(404).json({ error: error.message });
+            } else {
+                res.status(400).json({ error: error.message });
+            }
+        } else {
+            console.error('Error adding course to schedule:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+};
+
+export const deleteCourseFromSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const requestingUser = req.user;
+        if (!requestingUser) {
+            res.status(401).json({ error: 'Authentication required' });
+            return;
+        }
+
+        const { courseId, semester, grpIdentifier } = req.body;
+        
+        // Validate required fields
+        if (!courseId || !semester) {
+            res.status(400).json({ error: 'Missing required fields: courseId and semester are required' });
+            return;
+        }
+
+        await UserService.deleteCourseFromSchedule(requestingUser.uid, {
+            courseId,
+            semester,
+            grpIdentifier
+        });
+
+        res.status(200).json({ message: 'Course removed from schedule' });
+    } catch (error) {
+        if (error instanceof UserService.UserError) {
+            if (error.message === 'User not found' || 
+                error.message === 'Course not found in schedule' ||
+                error.message === 'Semester not found in schedule') {
+                res.status(404).json({ error: error.message });
+            } else {
+                res.status(400).json({ error: error.message });
+            }
+        } else {
+            console.error('Error deleting course from schedule:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+};
+
