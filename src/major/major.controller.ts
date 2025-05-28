@@ -22,18 +22,8 @@ export const getMajorWithRequirements = async (
 ): Promise<void> => {
     try {
         const { majorId } = req.params;
-        const { selectedCollegeId, selectedYear } = req.query;
-
-        // User authentication is optional - use uid if user is authenticated
-        const uid = req.user?.uid;
-        
-        const result = await MajorService.getMajorWithRequirements(
-            majorId,
-            uid,  // This will be undefined for unauthenticated users
-            selectedCollegeId as string | undefined,
-            selectedYear as string | undefined
-        );
-        
+        // If user is authenticated, pass the uid, otherwise pass undefined
+        const result = await MajorService.getMajorWithRequirements(majorId, req.user?.uid);
         res.status(200).json(result);
     } catch (error) {
         console.error('Error getting major requirements:', error);
