@@ -3,7 +3,7 @@
 
 import * as RequirementModel from './requirement.model';
 import { Requirement, ProcessedRequirement } from './requirement.model';
-import { CourseInSchedule } from '../course/course.model';
+import { CourseInSchedule, fetchCoursesInSchedule } from '../course/course.model';
 import { isTaken } from '../course/course.service';
 
 
@@ -87,6 +87,9 @@ export const processElective = async (
     };
 
     const updatedUserCourses = [...userCourses];
+    const taken: CourseInSchedule[] = [];
+    const planned: CourseInSchedule[] = [];
+    const eligible: CourseInSchedule[] = [];
 
     if (!reqDetails.courses) {
         return { processedRequirement, userCourses: updatedUserCourses };
@@ -106,25 +109,30 @@ export const processElective = async (
 
         if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
             if (isTaken(matchingUserCourse)) {
-                processedRequirement.takenCourses.push(matchingUserCourse);
+                taken.push(matchingUserCourse);
             } else {
-                processedRequirement.plannedCourses.push(matchingUserCourse);
+                planned.push(matchingUserCourse);
             }
         } else if (reqDetails.overlap?.some(reqid => 
             matchingUserCourse.usedInRequirements.includes(reqid)
         )) {
-            processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
+            eligible.push(matchingUserCourse);
         } else if (!reqDetails.overlap?.some(id => 
             matchingUserCourse.usedInRequirements.includes(id)
         )) {
             matchingUserCourse.usedInRequirements.push(reqDetails.id);
             if (isTaken(matchingUserCourse)) {
-                processedRequirement.takenCourses.push(matchingUserCourse);
+                taken.push(matchingUserCourse);
             } else {
-                processedRequirement.plannedCourses.push(matchingUserCourse);
+                planned.push(matchingUserCourse);
             }
         }
     }
+
+    // Fetch full course data for all courses
+    processedRequirement.takenCourses = await fetchCoursesInSchedule(taken);
+    processedRequirement.plannedCourses = await fetchCoursesInSchedule(planned);
+    processedRequirement.eligibleButNotUsedCourses = await fetchCoursesInSchedule(eligible);
 
     processedRequirement.completed = 
         processedRequirement.takenCourses.length >= (reqDetails.number || 0);
@@ -151,12 +159,15 @@ export const processCore = async (
         eligibleButNotUsedCourses: []
     };
 
+    const taken: CourseInSchedule[] = [];
+    const planned: CourseInSchedule[] = [];
+    const eligible: CourseInSchedule[] = [];
+
     if (!reqDetails.courseGrps) {
         return { processedRequirement, userCourses };
     }
 
     for (const group of reqDetails.courseGrps) {
-
         for (const courseId of group.courses) {
             const matchingUserCourse = userCourses.find(uc => 
                 uc.id === courseId
@@ -168,28 +179,33 @@ export const processCore = async (
 
             if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
                 if (isTaken(matchingUserCourse)) {
-                    processedRequirement.takenCourses.push(matchingUserCourse);
+                    taken.push(matchingUserCourse);
                 } else {
-                    processedRequirement.plannedCourses.push(matchingUserCourse);
+                    planned.push(matchingUserCourse);
                 }
                 completed = true;
             } else if (reqDetails.overlap?.some(id => 
                 matchingUserCourse.usedInRequirements.includes(id)
             )) {
-                processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
+                eligible.push(matchingUserCourse);
             } else if (!completed) {
                 matchingUserCourse.usedInRequirements.push(reqDetails.id);
                 if (isTaken(matchingUserCourse)) {
-                    processedRequirement.takenCourses.push(matchingUserCourse);
+                    taken.push(matchingUserCourse);
                 } else {
-                    processedRequirement.plannedCourses.push(matchingUserCourse);
+                    planned.push(matchingUserCourse);
                 }
                 completed = true;
             } else {
-                processedRequirement.eligibleButNotUsedCourses.push(matchingUserCourse);
+                eligible.push(matchingUserCourse);
             }
         }
     }
+
+    // Fetch full course data for all courses
+    processedRequirement.takenCourses = await fetchCoursesInSchedule(taken);
+    processedRequirement.plannedCourses = await fetchCoursesInSchedule(planned);
+    processedRequirement.eligibleButNotUsedCourses = await fetchCoursesInSchedule(eligible);
 
     processedRequirement.completed = 
         processedRequirement.takenCourses.length >= (reqDetails.number || 0);

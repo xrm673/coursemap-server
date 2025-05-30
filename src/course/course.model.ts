@@ -173,6 +173,101 @@ export interface CourseInSchedule {
   // repeatWarning: boolean; // true if the course has been planned or taken in other semesters
 }
 
+export interface FetchedCourseInSchedule {
+  id: string;
+  sbj: string;
+  nbr: string;
+  lvl: number;
+  smst: Array<string>;
+  ttl: string;
+  tts: string;
+  grpIdentifier?: string;
+  dsrpn: string;
+  cmts?: string;
+  rcmdReq?: string;
+  req?: string;
+  prereq?: Array<Array<string>>;
+  coreq?: Array<Array<string>>;
+  preco?: Array<Array<string>>;
+  needNote?: boolean;
+  when?: Array<string>;
+  breadth?: string;
+  distr?: Array<string>;
+  attr?: Array<string>;
+  lanreq?: string;
+  ovlpText?: string;
+  ovlp?: Array<string>;
+  fee?: string;
+  satisfies?: string;
+  pmsn?: string;
+  otcm?: Array<string>;
+  subfield?: string;
+  career?: string;
+  acadgrp?: string;
+  enrollGroups : Array<
+    {
+      grpIdentifier: string;
+      hasTopic: boolean; 
+      grpSmst: Array<string>; 
+      credits: Array<number>;
+      grading: string;
+      components: Array<string>;
+      componentsOptional?: Array<string>;
+      ov?: number; 
+      instructors?: {
+        [semester: string]: Array<{
+          netid: string;
+          name: string;
+          rmp?: number;
+          rmpid?: string;
+        }>;
+      }
+      locationConflicts?: boolean;
+      consent?: string;
+      session?: string;
+      mode?: string; 
+      sections?: Array<{
+        semester: string;
+        secInfo: Array<{
+          type: string;
+          nbr: string;
+          meetings: Array<{
+            no: number;
+            stTm: string;
+            edTm: string;
+            stDt: string;
+            edDt: string;
+            pt: string;
+            instructors: string[];
+            topic?: string;
+          }>;
+          open?: string;
+          mode?: string;
+          location?: string;
+        }>;
+      }>;
+      comb?: Array<{
+        courseId: string; 
+        type: string;
+      }>;
+      limitation?: string;
+      // majorOnly?: Array<string>; // only students in the majors can take this course (group)
+      // majorNo?: Array<string>; // students in the majors cannot take this course (group)
+      // collegeOnly?: Array<string>; // only students in the colleges can take this course (group)
+      // collegeNo?: Array<string>; // students in the colleges cannot take this course (group)
+      // graduateOnly?: boolean; // only graduate students can take this course (group)
+      grpprereq?: Array<Array<string>>;
+      grpcoreq?: Array<Array<string>>;
+      grppreco?: Array<Array<string>>;
+
+    }
+  >
+  usedInRequirements: Array<string>; // Schedule field: list of requirements that use this course
+  credit: number; // Schedule field: the credits gained (would gain) from this course
+  semester: string; // Schedule field: the semester that the course is planned or taken in
+  sections?: Array<string>; // Schedule field: list of sections (e.g., "LEC-001", "DIS-601", etc.)
+}
+
 export interface CourseGroup {
   id: number;
   topic?: string;
@@ -185,4 +280,39 @@ export const findById = async (id: string): Promise<Course | null> => {
   const doc = await coursesCollection.doc(id).get();
   if (!doc.exists) return null;
   return { id: doc.id, ...doc.data() } as Course;
+};
+
+/*
+ * Convert a CourseInSchedule to a FetchedCourseInSchedule by fetching the course data
+ * and merging it with the schedule data
+ */
+export const fetchCourseInSchedule = async (courseInSchedule: CourseInSchedule): Promise<FetchedCourseInSchedule | null> => {
+  const course = await findById(courseInSchedule.id);
+  if (!course) return null;
+
+  // If the course has a grpIdentifier, ensure we're using the correct enrollment group
+  let enrollGroup = undefined;
+  if (courseInSchedule.grpIdentifier) {
+    enrollGroup = course.enrollGroups.find(group => group.grpIdentifier === courseInSchedule.grpIdentifier);
+    if (!enrollGroup) return null;
+  }
+
+  // Merge the course data with the schedule data
+  return {
+    ...course,
+    usedInRequirements: courseInSchedule.usedInRequirements,
+    credit: courseInSchedule.credit,
+    semester: courseInSchedule.semester,
+    sections: courseInSchedule.sections
+  };
+};
+
+/*
+ * Convert an array of CourseInSchedule to FetchedCourseInSchedule
+ */
+export const fetchCoursesInSchedule = async (coursesInSchedule: CourseInSchedule[]): Promise<FetchedCourseInSchedule[]> => {
+  const fetchedCourses = await Promise.all(
+    coursesInSchedule.map(course => fetchCourseInSchedule(course))
+  );
+  return fetchedCourses.filter((course): course is FetchedCourseInSchedule => course !== null);
 };

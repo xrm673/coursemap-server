@@ -2,7 +2,7 @@
 // Data structure and Firebase interactions
 
 import { db } from '../../db/firebase-admin';
-import { CourseGroup, CourseInSchedule } from '../course/course.model';
+import { CourseGroup, CourseInSchedule, FetchedCourseInSchedule } from '../course/course.model';
 
 // stored in the database
 export interface Requirement {
@@ -43,9 +43,9 @@ export interface ProcessedRequirement {
 
     // the folowing are added when the requirement is processed
     completed: boolean;
-    takenCourses: CourseInSchedule[];
-    plannedCourses: CourseInSchedule[];
-    eligibleButNotUsedCourses: CourseInSchedule[];
+    takenCourses: FetchedCourseInSchedule[];
+    plannedCourses: FetchedCourseInSchedule[];
+    eligibleButNotUsedCourses: FetchedCourseInSchedule[];
 }
 
 const requirementsCollection = db.collection('requirements');
