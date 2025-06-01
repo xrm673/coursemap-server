@@ -33,10 +33,10 @@ export const processRequirements = async (
     const processedRequirements: ProcessedRequirement[] = [];
     let updatedUserCourses = userCourses || [];
 
-    for (const reqId of requirementIds) {
-        const reqDetails = await getRequirement(reqId);
-        if (!reqDetails) continue;
+    // Fetch all requirements in one query
+    const requirements = await RequirementModel.findByIds(requirementIds);
 
+    for (const reqDetails of requirements) {
         // If no userCourses, create basic processed requirement
         if (!userCourses) {
             processedRequirements.push({
@@ -107,7 +107,7 @@ export const processElective = async (
 
         if (!matchingUserCourse) continue;
 
-        if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
+        if (matchingUserCourse.usedInRequirements.includes(reqDetails._id)) {
             if (isTaken(matchingUserCourse)) {
                 taken.push(matchingUserCourse);
             } else {
@@ -117,10 +117,10 @@ export const processElective = async (
             matchingUserCourse.usedInRequirements.includes(reqid)
         )) {
             eligible.push(matchingUserCourse);
-        } else if (!reqDetails.overlap?.some(id => 
-            matchingUserCourse.usedInRequirements.includes(id)
+        } else if (!reqDetails.overlap?.some(_id => 
+            matchingUserCourse.usedInRequirements.includes(_id)
         )) {
-            matchingUserCourse.usedInRequirements.push(reqDetails.id);
+            matchingUserCourse.usedInRequirements.push(reqDetails._id);
             if (isTaken(matchingUserCourse)) {
                 taken.push(matchingUserCourse);
             } else {
@@ -177,19 +177,19 @@ export const processCore = async (
 
             let completed = false;
 
-            if (matchingUserCourse.usedInRequirements.includes(reqDetails.id)) {
+            if (matchingUserCourse.usedInRequirements.includes(reqDetails._id)) {
                 if (isTaken(matchingUserCourse)) {
                     taken.push(matchingUserCourse);
                 } else {
                     planned.push(matchingUserCourse);
                 }
                 completed = true;
-            } else if (reqDetails.overlap?.some(id => 
-                matchingUserCourse.usedInRequirements.includes(id)
+            } else if (reqDetails.overlap?.some(_id => 
+                matchingUserCourse.usedInRequirements.includes(_id)
             )) {
                 eligible.push(matchingUserCourse);
             } else if (!completed) {
-                matchingUserCourse.usedInRequirements.push(reqDetails.id);
+                matchingUserCourse.usedInRequirements.push(reqDetails._id);
                 if (isTaken(matchingUserCourse)) {
                     taken.push(matchingUserCourse);
                 } else {

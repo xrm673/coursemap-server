@@ -35,7 +35,7 @@ export const getUserConcentrations = (
     }
 
     // Find the major in user's majors array
-    const userMajor = userDetails.majors.find(major => major.id === majorDetails.id);
+    const userMajor = userDetails.majors.find(major => major.id === majorDetails._id);
     
     // Return concentrations if found, otherwise empty array
     return userMajor?.concentrations || [];

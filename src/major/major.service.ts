@@ -69,7 +69,7 @@ export const getMajorWithRequirements = async (
     }
 
     const processedMajor: ProcessedMajor = {
-        id: majorDetails.id,
+        id: majorDetails._id,
         name: majorDetails.name,
         description: majorDetails.description,
         needsYear: majorDetails.needsYear,
