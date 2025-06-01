@@ -1,12 +1,12 @@
 // src/requirement/requirement.model.ts
-// Data structure and Firebase interactions
+// Data structure and MongoDB interactions
 
-import { db } from '../../db/firebase-admin';
-import { CourseGroup, CourseInSchedule, FetchedCourseInSchedule } from '../course/course.model';
+import { RequirementModel } from './requirement.schema';
+import { CourseGroup, FetchedCourseInSchedule } from '../course/course.model';
 
 // stored in the database
 export interface Requirement {
-    id: string;
+    _id: string;
     type: string;
     major: string;
     name: string;
@@ -25,38 +25,24 @@ export interface Requirement {
 }
 
 // processed requirement
-export interface ProcessedRequirement {
-    id: string;
-    type: string;
-    major: string;
-    name: string;
-    tag: string;
-    tagDescr: string;
-    descr: string[];
-    number?: number; 
-    overlap?: Array<string>;
-    courses?: Array<string | {
-        id: string;
-        grpIdentifier: string;
-    }>;
-    courseGrps?: Array<CourseGroup>;
-
-    // the folowing are added when the requirement is processed
+export interface ProcessedRequirement extends Requirement {
     completed: boolean;
     takenCourses: FetchedCourseInSchedule[];
     plannedCourses: FetchedCourseInSchedule[];
     eligibleButNotUsedCourses: FetchedCourseInSchedule[];
 }
 
-const requirementsCollection = db.collection('requirements');
+export const findById = async (id: string): Promise<Requirement | null> => {
+    const requirement = await RequirementModel.findOne({ id });
+    if (!requirement) return null;
+    return requirement;
+};
 
 /*
-    Find a requirement by its id
+    Find multiple requirements by their IDs
 */
-export const findById = async (id: string): Promise<Requirement | null> => {
-    const doc = await requirementsCollection.doc(id).get();
-    if (!doc.exists) return null;
-    return { id: doc.id, ...doc.data() } as Requirement;
+export const findByIds = async (_ids: string[]): Promise<Requirement[]> => {
+    return await RequirementModel.find({ _id: { $in: _ids } });
 };
 
 

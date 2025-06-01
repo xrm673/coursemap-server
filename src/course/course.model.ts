@@ -1,12 +1,10 @@
 // src/course/model.ts
-// Data structure and Firebase interactions
+// Data structure and MongoDB interactions
 
-import { db } from '../../db/firebase-admin';
-
-const coursesCollection = db.collection('courses');
+import { CourseModel } from './course.schema';
 
 export interface Course {
-  id: string;
+  _id: string;
   sbj: string;
   nbr: string;
   lvl: number;
@@ -15,27 +13,35 @@ export interface Course {
   tts: string; // title (short)
   grpIdentifier?: string; // only specified when the course has topic and has one enrol group
   dsrpn: string; // description
-  cmts?: string; // comments
-  rcmdReq?: string; //recommend Prerequisite or Corequisite requirement in text
-  req?: string; // Prerequisite, Corequisite, or PreCoRequisite in text
-  prereq?: Array<Array<string>>;
-  coreq?: Array<Array<string>>;
-  preco?: Array<Array<string>>;
-  needNote?: boolean; // true if the course needs a note for prereq/coreq/preco
   when?: Array<string>; // when (semester category) the course is offered, not accurate
   breadth?: string; // breadth category
   distr?: Array<string>; // distribution category
   attr?: Array<string>; // attributes
-  lanreq?: string; // language requirement
-  ovlpText?: string; // original text of overlap courses
-  ovlp?: Array<string>; // overlap courses
   fee?: string; // course fee
   satisfies?: string; // satisfies requirement
-  pmsn?: string; // A text that introduces the enrollment permission requirements of the course
   otcm?: Array<string>; // outcomes of the course
   subfield?: string;
   career?: string;
   acadgrp?: string;
+  eligibility: {
+    cmts?: string; // comments
+    rcmdReq?: string; //recommend Prerequisite or Corequisite requirement in text
+    req?: string; // Prerequisite, Corequisite, or PreCoRequisite in text
+    prereq?: Array<{
+      courses: Array<string>;
+    }>;
+    coreq?: Array<{
+      courses: Array<string>;
+    }>;
+    preco?: Array<{
+      courses: Array<string>;
+    }>;
+    needNote?: boolean; // true if the course needs a note for prereq/coreq/preco
+    lanreq?: string; // language requirement
+    ovlpText?: string; // original text of overlap courses
+    ovlp?: Array<string>; // overlap courses
+    pmsn?: string; // enrollment permission requirement
+  }
   enrollGroups : Array<
     {
       // identifier of the enrollment group
@@ -68,20 +74,16 @@ export interface Course {
 
       // overall rating from CU Review
       // add later
-      ov?: number; 
+      // ov?: number; 
 
       // difficulty from CU Review
       // df?: number; 
 
       // updated for early semesters
-      instructors?: {
-        [semester: string]: Array<{
-          netid: string;
-          name: string;
-          rmp?: number; // rate my professor score
-          rmpid?: string; // rate my professor id
-        }>;
-      }
+      instructors?: Array<{
+        semester: string;
+        netids: Array<string>;
+      }>;
 
       // true if it has a section that is offered long time out of Ithaca
       locationConflicts?: boolean;
@@ -101,23 +103,20 @@ export interface Course {
       // only for semesters in current year (max length 4)
       sections?: Array<{
         semester: string; //  must be in current year
-        secInfo: Array<{
-          type: string; // "LEC", "LAB", "DIS", "IND", etc.
-          nbr: string; // "001", "601", etc.
-          meetings: Array<{
-            no: number; // "1", "2", etc.
-            stTm: string; // "01:25PM"
-            edTm: string; // "02:40PM"
-            stDt: string; // "08/25/2025"
-            edDt: string; // "12/13/2025"
-            pt: string; // "MW", "TH", etc.
-            instructors: string[]; // list of instructors netids
-            topic?: string; // topic of the meeting
-          }>;
-          open?: string; // "C" for closed, "W" for waitlist
-          mode?: string; // not displayed if in-person
-          location?: string; // only displayed if it's not offered in Ithaca
+        type: string; // "LEC", "LAB", "DIS", "IND", etc.
+        nbr: string; // "001", "601", etc.
+        meetings: Array<{
+          no: number; // "1", "2", etc.
+          stTm: string; // "01:25PM"
+          edTm: string; // "02:40PM"
+          stDt: string; // "08/25/2025"
+          edDt: string; // "12/13/2025"
+          pt: string; // "MW", "TH", etc.
+          topic?: string; // topic of the meeting
         }>;
+        open?: string; // "C" for closed, "W" for waitlist
+        mode?: string; // not displayed if in-person
+        location?: string; // only displayed if it's not offered in Ithaca
       }>;
 
       // combined courses (groups)
@@ -137,13 +136,19 @@ export interface Course {
       // graduateOnly?: boolean; // only graduate students can take this course (group)
 
       // prereq from notes
-      grpprereq?: Array<Array<string>>;
+      grpprereq?: Array<{
+        courses: Array<string>;
+      }>;
 
       // coreq from notes
-      grpcoreq?: Array<Array<string>>;
+      grpcoreq?: Array<{
+        courses: Array<string>;
+      }>;
 
       // preco from notes
-      grppreco?: Array<Array<string>>;
+      grppreco?: Array<{
+        courses: Array<string>;
+      }>;
 
     }
   >
@@ -180,6 +185,12 @@ export interface FetchedCourseInSchedule extends Course{
   sections?: Array<string>; // Schedule field: list of sections (e.g., "LEC-001", "DIS-601", etc.)
 }
 
+export interface CourseInScheduleForRequirement extends CourseInSchedule {
+  sbj: string; // Schedule field: subject
+  nbr: string; // Schedule field: number
+  tts: string; // Schedule field: title (short)
+}
+
 export interface CourseGroup {
   id: number;
   topic?: string;
@@ -189,9 +200,7 @@ export interface CourseGroup {
 
 
 export const findById = async (id: string): Promise<Course | null> => {
-  const doc = await coursesCollection.doc(id).get();
-  if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() } as Course;
+  return await CourseModel.findOne({ id });
 };
 
 /*

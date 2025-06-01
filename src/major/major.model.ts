@@ -1,13 +1,12 @@
 // src/major/major.model.ts
-// Data structure and Firebase interactions
+// Data structure and MongoDB interactions
 
 import { ProcessedRequirement } from '../requirement/requirement.model';
-import { db } from '../../db/firebase-admin';
-
+import { MajorModel } from './major.schema';
 
 // stored in the database
 export interface Major {
-    id: string;
+    _id: string;  // Custom string ID for the major
     name: string;
     description?: string;
     needsYear: boolean;
@@ -16,6 +15,7 @@ export interface Major {
         id: string;
         name: string;
     }>;
+    requiredCourseNumber?: Number,
     basicRequirements: Array<{
         year?: string;
         college?: string;
@@ -31,7 +31,6 @@ export interface Major {
         requirements: string[];
     }>;
     init: string[];
-    // other fields...
 }
 
 // provided to frontend
@@ -55,13 +54,9 @@ export interface ProcessedMajor {
     endRequirements?: ProcessedRequirement[];
 }
 
-const majorsCollection = db.collection('majors');
-
 /*
-    Find a major by its id
+    Find a major by its _id
 */
-export const findById = async (id: string): Promise<Major | null> => {
-    const doc = await majorsCollection.doc(id).get();
-    if (!doc.exists) return null;
-    return { id: doc.id, ...doc.data() } as Major;
+export const findById = async (_id: string): Promise<Major | null> => {
+    return await MajorModel.findOne({ _id });
 };
