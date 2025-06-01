@@ -1,6 +1,26 @@
 import { Schema, model } from 'mongoose';
 import { Course } from './course.model';
 
+const MeetingSchema = new Schema({
+    no: Number,
+    stTm: String,
+    edTm: String,
+    stDt: String,
+    edDt: String,
+    pt: String,
+    topic: String
+  }, { _id: false });
+
+const SectionSchema = new Schema({
+    semester: String,
+    type: String,
+    nbr: String,
+    meetings: [MeetingSchema],
+    open: String,
+    mode: String,
+    location: String
+}, { _id: false });
+
 const EnrollGroupSchema = new Schema({
   grpIdentifier: { type: String, required: true },
   hasTopic: { type: Boolean, required: true },
@@ -17,23 +37,7 @@ const EnrollGroupSchema = new Schema({
   consent: String,
   session: String,
   mode: String,
-  sections: [{
-    semester: String,
-    type: String,
-    nbr: String,
-    meetings: [{
-      no: Number,
-      stTm: String,
-      edTm: String,
-      stDt: String,
-      edDt: String,
-      pt: String,
-      topic: String
-    }],
-    open: String,
-    mode: String,
-    location: String
-  }],
+  sections: [SectionSchema],
   comb: [{
     courseId: String,
     type: String
@@ -48,7 +52,7 @@ const EnrollGroupSchema = new Schema({
   grppreco: [{
     courses: [String]
   }]
-});
+}, { _id: false });
 
 const CourseSchema = new Schema<Course>({
   _id: { type: String, required: true, unique: true },
@@ -96,4 +100,4 @@ const CourseSchema = new Schema<Course>({
 CourseSchema.index({ ttl: 1 });  // Regular index on title
 CourseSchema.index({ "enrollGroups.grpIdentifier": 1 });  // Index on enrollment group identifiers
 
-export const CourseModel = model<Course>('Course', CourseSchema); 
+export const CourseModel = model<Course>('Course', CourseSchema, 'courses'); 
