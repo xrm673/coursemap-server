@@ -32,4 +32,4 @@ const RequirementSchema = new Schema<Requirement>({
 RequirementSchema.index({ major: 1 });
 RequirementSchema.index({ type: 1 });
 
-export const RequirementModel = model<Requirement>('Requirement', RequirementSchema); 
+export const RequirementModel = model<Requirement>('Requirement', RequirementSchema, 'requirements'); 

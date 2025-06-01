@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose';
 import { Major } from './major.model';
 
 const CollegeSchema = new Schema({
-  id: { type: String, required: true },
+  _id: { type: String, required: true },
   name: { type: String, required: true }
 });
 
@@ -34,11 +34,11 @@ const MajorSchema = new Schema<Major>({
   basicRequirements: [BasicRequirementSchema],
   concentrations: [ConcentrationSchema],
   endRequirements: [EndRequirementSchema],
-  init: [String]
+  onboardingCourses: [String]
 });
 
 // Create indexes for common queries
 MajorSchema.index({ name: 1 });
 MajorSchema.index({ "colleges.id": 1 });
 
-export const MajorModel = model<Major>('Major', MajorSchema); 
+export const MajorModel = model<Major>('Major', MajorSchema, 'majors'); 

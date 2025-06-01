@@ -30,7 +30,7 @@ export interface Major {
         college?: string;
         requirements: string[];
     }>;
-    init: string[];
+    onboardingCourses: string[];
 }
 
 // provided to frontend
