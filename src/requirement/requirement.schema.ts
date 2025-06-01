@@ -1,11 +1,16 @@
 import { Schema, model } from 'mongoose';
-import { Requirement } from './requirement.model';
+import { CourseGroup, CourseWithGrpTopic, Requirement } from './requirement.model';
 
-const CourseGroupSchema = new Schema({
+const CourseGroupSchema = new Schema<CourseGroup>({
   _id: { type: Number, required: true },
   topic: String,
-  courses: [String],
+  courseIds: { type: [String], required: true },
   notes: String
+});
+
+const CourseWithGrpTopicSchema = new Schema<CourseWithGrpTopic>({
+  courseId: { type: String, required: true },
+  grpIdentifier: { type: String, required: true }
 });
 
 const RequirementSchema = new Schema<Requirement>({
@@ -17,15 +22,8 @@ const RequirementSchema = new Schema<Requirement>({
   tagDescr: { type: String, required: true },
   descr: [String],
   number: Number,
-  courses: [{
-    type: Schema.Types.Mixed,
-    validate: {
-      validator: function(v: any) {
-        return typeof v === 'string' || (typeof v === 'object' && v.id && v.grpIdentifier);
-      },
-      message: 'Course must be either a string ID or an object with id and grpIdentifier'
-    }
-  }],
+  courseIds: [String],
+  courseWithGrpTopics: [CourseWithGrpTopicSchema],
   courseGrps: [CourseGroupSchema],
   overlap: [String]
 });

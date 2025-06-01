@@ -91,40 +91,36 @@ export const processElective = async (
     const planned: CourseInSchedule[] = [];
     const eligible: CourseInSchedule[] = [];
 
-    if (!reqDetails.courses) {
+    if (!reqDetails.courseIds) {
         return { processedRequirement, userCourses: updatedUserCourses };
     }
 
-    for (const courseRef of reqDetails.courses) {
-        // if courseRef is a string, it is a courseId; otherwise it is an object
-        const courseId = typeof courseRef === 'string' ? courseRef : courseRef.id;
-        const grpIdentifier = typeof courseRef === 'string' ? undefined : courseRef.grpIdentifier;
+    // Find all matching courses in the user's schedule
+    const matchingUserCourses = updatedUserCourses.filter(userCourse => 
+        isMatchingCourse(reqDetails, userCourse)
+    );
 
-        const matchingUserCourse = updatedUserCourses.find(userCourse => 
-            userCourse.id === courseId && 
-            (!grpIdentifier || userCourse.grpIdentifier === grpIdentifier)
-        );
-
-        if (!matchingUserCourse) continue;
-
-        if (matchingUserCourse.usedInRequirements.includes(reqDetails._id)) {
-            if (isTaken(matchingUserCourse)) {
-                taken.push(matchingUserCourse);
+    // Process the matching courses
+    for (const matchingCourse of matchingUserCourses) {
+        if (matchingCourse.usedInRequirements.includes(reqDetails._id)) {
+            // Course already used in this requirement
+            if (isTaken(matchingCourse)) {
+                taken.push(matchingCourse);
             } else {
-                planned.push(matchingUserCourse);
+                planned.push(matchingCourse);
             }
-        } else if (reqDetails.overlap?.some(reqid => 
-            matchingUserCourse.usedInRequirements.includes(reqid)
+        } else if (reqDetails.overlap?.some(reqId => 
+            matchingCourse.usedInRequirements.includes(reqId)
         )) {
-            eligible.push(matchingUserCourse);
-        } else if (!reqDetails.overlap?.some(_id => 
-            matchingUserCourse.usedInRequirements.includes(_id)
-        )) {
-            matchingUserCourse.usedInRequirements.push(reqDetails._id);
-            if (isTaken(matchingUserCourse)) {
-                taken.push(matchingUserCourse);
+            // Course used in an overlapping requirement
+            eligible.push(matchingCourse);
+        } else {
+            // Course not used yet
+            matchingCourse.usedInRequirements.push(reqDetails._id);
+            if (isTaken(matchingCourse)) {
+                taken.push(matchingCourse);
             } else {
-                planned.push(matchingUserCourse);
+                planned.push(matchingCourse);
             }
         }
     }
@@ -168,7 +164,7 @@ export const processCore = async (
     }
 
     for (const group of reqDetails.courseGrps) {
-        for (const courseId of group.courses) {
+        for (const courseId of group.courseIds) {
             const matchingUserCourse = userCourses.find(uc => 
                 uc.id === courseId
             );
@@ -212,3 +208,27 @@ export const processCore = async (
 
     return { processedRequirement, userCourses };
 };
+
+function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule): boolean {
+    // First check if the course ID matches any in courseIds
+    if (reqDetails.courseIds && reqDetails.courseIds.includes(userCourse.id)) {
+        // If the userCourse doesn't have a grpIdentifier, it's a match
+        if (!userCourse.grpIdentifier) {
+            return true;
+        }
+    }
+
+    // Then check if it matches any course in courseWithGrpTopic
+    if (reqDetails.courseWithGrpTopics) {
+        const matchingCourseWithGrp = reqDetails.courseWithGrpTopics.find(course => 
+            course.courseId === userCourse.id && 
+            course.grpIdentifier === userCourse.grpIdentifier
+        );
+        if (matchingCourseWithGrp) {
+            return true;
+        }
+    }
+
+    // If no matches found, return false
+    return false;
+}

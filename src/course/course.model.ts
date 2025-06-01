@@ -191,16 +191,12 @@ export interface CourseInScheduleForRequirement extends CourseInSchedule {
   tts: string; // Schedule field: title (short)
 }
 
-export interface CourseGroup {
-  id: number;
-  topic?: string;
-  courses: Array<string>;
-  notes?: string;
-}
+export const findById = async (_id: string): Promise<Course | null> => {
+  return await CourseModel.findOne({ _id });
+};
 
-
-export const findById = async (id: string): Promise<Course | null> => {
-  return await CourseModel.findOne({ id });
+export const findByIds = async (_ids: string[]): Promise<Course[]> => {
+  return await CourseModel.find({ _id: { $in: _ids } });
 };
 
 /*

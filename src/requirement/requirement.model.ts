@@ -2,7 +2,7 @@
 // Data structure and MongoDB interactions
 
 import { RequirementModel } from './requirement.schema';
-import { CourseGroup, FetchedCourseInSchedule } from '../course/course.model';
+import { FetchedCourseInSchedule } from '../course/course.model';
 
 // stored in the database
 export interface Requirement {
@@ -14,14 +14,24 @@ export interface Requirement {
     tagDescr: string;
     descr: string[];
     number?: number; // total number of courses required
-    // an array of course ids / id with grpIdentifier (for elective requirements)
-    courses?: Array<string | {
-        id: string;
-        grpIdentifier: string;
-    }>;
+    // an array of course ids (for elective requirements)
+    courseIds?: Array<string>
+    courseWithGrpTopics?: Array<CourseWithGrpTopic>;
     // an array of course groups (for core requirements)
     courseGrps?: Array<CourseGroup>;
     overlap?: Array<string>; // overlap requirement ids
+}
+
+export interface CourseGroup {
+    _id: number;
+    topic?: string;
+    courseIds: Array<string>;
+    notes?: string;
+}
+
+export interface CourseWithGrpTopic {
+    courseId: string;
+    grpIdentifier: string;
 }
 
 // processed requirement
@@ -38,9 +48,6 @@ export const findById = async (id: string): Promise<Requirement | null> => {
     return requirement;
 };
 
-/*
-    Find multiple requirements by their IDs
-*/
 export const findByIds = async (_ids: string[]): Promise<Requirement[]> => {
     return await RequirementModel.find({ _id: { $in: _ids } });
 };

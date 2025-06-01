@@ -7,6 +7,7 @@ import { userRouter } from './user/user.routes';
 import { requirementRouter } from './requirement/requirement.routes';
 import { collegeRouter } from './college/college.routes';
 import { authRouter } from './auth/auth.routes';
+import { connectDB } from './db/mongodb';
 
 // Load environment variables
 dotenv.config();
@@ -31,8 +32,17 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-  console.log(`Enter in browser: http://localhost:${port}`);
-}); 
+// Initialize MongoDB connection and start server
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer(); 
