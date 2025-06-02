@@ -12,7 +12,7 @@ export const getCourse = async (courseId: string, ttl?: string): Promise<Course 
     // Extract the subject (letters) from the courseId
     const subject = courseId.match(/^[A-Za-z]+/)?.[0] || '';
     return {
-      id: courseId,
+      _id: courseId,
       sbj: subject,
       nbr: courseId.slice(subject.length), // Get the number part
       ttl: ttl || 'No data', // Include ttl if provided

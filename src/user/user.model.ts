@@ -11,24 +11,26 @@ export interface User {
     firstName?: string;
     lastName?: string;
     year?: string;
-    collegeId?: string;
-    majors?: Array<{
-        id: string;
-        name: string;
-        collegeId: string;
-        concentrations?: Array<string>;
-    }>;
+    college: UserCollege;
+    majors?: Array<UserMajor>;
     scheduleData?: CourseInSchedule[];
     favoredCourses?: CourseFavored[];
-    preferences?: {
-        theme?: string;
-        notifications?: boolean;
-        // Add other user preferences as needed
-    };
+    
     // Authentication fields
     passwordHash?: string;
     role?: 'student' | 'admin';
     lastLogin?: Date;
+}
+
+export interface UserCollege {
+    collegeId: string;
+    name: string;
+}
+
+export interface UserMajor {
+    majorId: string;
+    name: string;
+    concentrationNames: string[];
 }
 
 export const usersCollection = db.collection('users');

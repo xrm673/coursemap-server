@@ -22,23 +22,23 @@ export const getUser = async (uid: string): Promise<Omit<User, 'passwordHash'>> 
     return userData;
 };
 
-export const getUserCourses = (userDetails: User): CourseInSchedule[] => {
-    return userDetails.scheduleData || [];
+export const getUserCourses = (user: User): CourseInSchedule[] => {
+    return user.scheduleData || [];
 };
 
 export const getUserConcentrations = (
-    userDetails: User, 
-    majorDetails: Major
+    user: User, 
+    major: Major
 ): string[] => {
-    if (!userDetails.majors) {
+    if (!user.majors) {
         return [];
     }
 
     // Find the major in user's majors array
-    const userMajor = userDetails.majors.find(major => major.id === majorDetails._id);
+    const userMajor = user.majors.find(userMajor => userMajor.majorId === major._id);
     
     // Return concentrations if found, otherwise empty array
-    return userMajor?.concentrations || [];
+    return userMajor?.concentrationNames || [];
 };
 
 
@@ -66,7 +66,7 @@ export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored
 
         // Create a clean favorite object without undefined values
         const newFavorite: CourseFavored = {
-            id: courseFavored.id
+            _id: courseFavored._id
         };
         
         // Only add grpIdentifier if it exists
@@ -110,11 +110,11 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
         const indexToDelete = user.favoredCourses.findIndex(course => {
             if (courseToDelete.grpIdentifier) {
                 // If grpIdentifier is provided, both courseId and grpIdentifier must match
-                return course.id === courseToDelete.id && 
+                return course._id === courseToDelete._id && 
                        course.grpIdentifier === courseToDelete.grpIdentifier;
             } else {
                 // If no grpIdentifier provided, only match courses without grpIdentifier
-                return course.id === courseToDelete.id && 
+                return course._id === courseToDelete._id && 
                        !course.grpIdentifier;
             }
         });
@@ -151,7 +151,7 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
         // Check for exact duplicate in the same semester
         const isDuplicate = user.scheduleData.some(course => 
             course.semester === courseData.semester &&
-            course.id === courseData.id &&
+            course._id === courseData._id &&
             (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
         );
 
@@ -161,7 +161,7 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
 
         // Add the new course
         const newCourse: CourseInSchedule = {
-            id: courseData.id,
+            _id: courseData._id,
             semester: courseData.semester,
             credit: courseData.credit,
             usedInRequirements: courseData.usedInRequirements
@@ -190,7 +190,7 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
 };
 
 export const deleteCourseFromSchedule = async (uid: string, courseData: {
-    id: string;
+    _id: string;
     semester: string;
     grpIdentifier?: string;
 }): Promise<void> => {
@@ -207,7 +207,7 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
         // Find the course index
         const courseIndex = user.scheduleData.findIndex(course => 
             course.semester === courseData.semester &&
-            course.id === courseData.id &&
+            course._id === courseData._id &&
             (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
         );
 
@@ -227,6 +227,14 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
         throw error;
     }
 };
+
+export const checkIsUserMajor = (user: User, majorId: string): boolean => {
+    if (!user.majors) {
+        return false;
+    }
+
+    return user.majors.some(userMajor => userMajor.majorId === majorId);
+}
 
 
 

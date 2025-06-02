@@ -199,7 +199,7 @@ export const processCore = async (
     for (const group of reqDetails.courseGrps) {
         for (const courseId of group.courseIds) {
             const matchingUserCourse = userCourses.find(uc => 
-                uc.id === courseId
+                uc._id === courseId
             );
 
             if (!matchingUserCourse) continue;
@@ -244,7 +244,7 @@ export const processCore = async (
 
 function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule): boolean {
     // First check if the course ID matches any in courseIds
-    if (reqDetails.courseIds && reqDetails.courseIds.includes(userCourse.id)) {
+    if (reqDetails.courseIds && reqDetails.courseIds.includes(userCourse._id)) {
         // If the userCourse doesn't have a grpIdentifier, it's a match
         if (!userCourse.grpIdentifier) {
             return true;
@@ -254,7 +254,7 @@ function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule)
     // Then check if it matches any course in courseWithGrpTopic
     if (reqDetails.courseWithGrpTopics) {
         const matchingCourseWithGrp = reqDetails.courseWithGrpTopics.find(course => 
-            course.courseId === userCourse.id && 
+            course.courseId === userCourse._id && 
             course.grpIdentifier === userCourse.grpIdentifier
         );
         if (matchingCourseWithGrp) {

@@ -21,6 +21,7 @@ export interface Major {
 
 // provided to frontend
 export interface ProcessedMajor extends Omit<Major, 'rawBasicRequirements' | 'rawEndRequirements'> {
+    isUserMajor: boolean;
     selectedCollegeId: string;
     selectedYear: string;
     basicRequirements: ProcessedRequirement[];

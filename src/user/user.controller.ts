@@ -68,7 +68,7 @@ export const addFavoredCourse = async (req: Request, res: Response): Promise<voi
         }
 
         const updatedUser = await UserService.addFavoredCourse(requestingUser.uid, {
-            id: courseId,
+            _id: courseId,
             grpIdentifier
         });
 
@@ -106,7 +106,7 @@ export const deleteFavoredCourse = async (req: Request, res: Response): Promise<
         }
 
         await UserService.deleteFavoredCourse(requestingUser.uid, {
-            id: courseId,
+            _id: courseId,
             grpIdentifier
         });
 
@@ -189,16 +189,16 @@ export const deleteCourseFromSchedule = async (req: Request, res: Response): Pro
             return;
         }
 
-        const { id, semester, grpIdentifier } = req.body;
+        const { _id, semester, grpIdentifier } = req.body;
         
         // Validate required fields
-        if (!id || !semester) {
+        if (!_id || !semester) {
             res.status(400).json({ error: 'Missing required fields: courseId and semester are required' });
             return;
         }
 
         await UserService.deleteCourseFromSchedule(requestingUser.uid, {
-            id,
+            _id,
             semester,
             grpIdentifier
         });

@@ -160,7 +160,7 @@ export interface Meeting {
 }
 
 export interface NoDataCourse {
-  id: string;
+  _id: string;
   sbj: string;
   nbr: string;
   ttl: string;
@@ -168,12 +168,12 @@ export interface NoDataCourse {
 }
 
 export interface CourseFavored {
-  id: string;
+  _id: string;
   grpIdentifier?: string;
 }
 
 export interface CourseInSchedule {
-  id: string;
+  _id: string;
   grpIdentifier?: string; // must be specified if course has topic
   usedInRequirements: Array<string>; // list of requirements that use this course
   credit: number; // the credits gained (would gain) from this course
@@ -209,7 +209,7 @@ export const findByIds = async (_ids: string[]): Promise<Course[]> => {
  * and merging it with the schedule data
  */
 export const fetchCourseInSchedule = async (courseInSchedule: CourseInSchedule): Promise<FetchedCourseInSchedule | null> => {
-  const course = await findById(courseInSchedule.id);
+  const course = await findById(courseInSchedule._id);
   if (!course) return null;
 
   // If the course has a grpIdentifier, ensure we're using the correct enrollment group
