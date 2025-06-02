@@ -3,10 +3,10 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { ObjectId } from 'mongodb';
+import { Types } from 'mongoose';
+import { UserModel } from '../user/user.schema';
 import { User } from '../user/user.model';
 import { LoginCredentials, SignupData, AuthResponse } from './auth.types';
-import * as UserModel from '../user/user.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const SALT_ROUNDS = 10;
@@ -20,16 +20,12 @@ export class AuthError extends Error {
 }
 
 export const generateToken = (user: User): string => {
-  if (!user.role) {
-    throw new AuthError('User role is required for token generation');
-  }
-
+  if (!user.role) throw new AuthError('User role is required for token generation');
   const payload = {
-    _id: user._id?.toString(), // Convert ObjectId to string for JWT
+    _id: (user._id as Types.ObjectId).toString(),
     email: user.email,
     role: user.role
   };
-  
   return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 };
 
@@ -42,62 +38,43 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
 };
 
 export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
-  // Check if user already exists
-  const existingUser = await UserModel.findUserByEmail(signupData.email);
-  if (existingUser) {
-    throw new AuthError('User with this email already exists');
-  }
+  const existingUser = await UserModel.findOne({ email: signupData.email });
+  if (existingUser) throw new AuthError('User with this email already exists');
 
-  // Create new user
-  const passwordHash = await hashPassword(signupData.password);
-  const newUser: Omit<User, '_id'> = {
-    email: signupData.email,
-    firstName: signupData.firstName,
-    lastName: signupData.lastName,
+  const passwordHash = await bcrypt.hash(signupData.password, SALT_ROUNDS);
+
+  const user = new UserModel({
+    ...signupData,
     passwordHash,
-    netid: signupData.netid,
-    role: signupData.role || 'student',
-    year: signupData.year,
-    college: signupData.college,
-    majors: signupData.majors,
     createdAt: new Date(),
     updatedAt: new Date()
-  };
+  });
 
-  const createdUser = await UserModel.createUser(newUser);
-  const token = generateToken(createdUser);
+  await user.save();
+  const token = generateToken(user);
 
-  // Return user data without password hash
-  const { passwordHash: _, ...userWithoutPassword } = createdUser;
-  return {
-    token,
-    user: userWithoutPassword
-  };
+  // Remove passwordHash from returned user object
+  const userObj = user.toObject();
+  userObj.passwordHash = undefined;
+
+  return { token, user: userObj };
 };
 
-export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  const user = await UserModel.findUserByEmail(credentials.email);
-  if (!user || !user.passwordHash) {
-    throw new AuthError('Invalid email or password');
-  }
+export const login = async (email: string, password: string): Promise<AuthResponse> => {
+  const user = await UserModel.findOne({ email });
+  if (!user || !user.passwordHash) throw new AuthError('Invalid email or password');
 
-  const isValidPassword = await verifyPassword(credentials.password, user.passwordHash);
-  if (!isValidPassword) {
-    throw new AuthError('Invalid email or password');
-  }
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
+  if (!isMatch) throw new AuthError('Invalid email or password');
 
-  // Update last login
-  if (!user._id) {
-    throw new AuthError('User ID is missing');
-  }
-  await UserModel.updateUserLastLogin(user._id);
+  user.lastLogin = new Date();
+  await user.save();
 
   const token = generateToken(user);
-  
-  // Return user data without password hash
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  return {
-    token,
-    user: userWithoutPassword
-  };
+
+  // Remove passwordHash from returned user object
+  const userObj = user.toObject();
+  userObj.passwordHash = undefined;
+
+  return { token, user: userObj };
 }; 

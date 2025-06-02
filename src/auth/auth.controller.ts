@@ -7,8 +7,7 @@ import { SignupData, LoginCredentials } from './auth.types';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const signupData: SignupData = req.body;
-    const result = await AuthService.signup(signupData);
+    const result = await AuthService.signup(req.body);
     res.status(201).json(result);
   } catch (error) {
     if (error instanceof AuthService.AuthError) {
@@ -22,8 +21,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const credentials: LoginCredentials = req.body;
-    const result = await AuthService.login(credentials);
+    const { email, password } = req.body;
+    const result = await AuthService.login(email, password);
     res.status(200).json(result);
   } catch (error) {
     if (error instanceof AuthService.AuthError) {

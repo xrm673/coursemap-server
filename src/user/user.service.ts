@@ -1,12 +1,11 @@
 // src/user/user.service.ts
 // Business logic for users
 
-import { ObjectId } from 'mongodb';
+import { Types } from 'mongoose';
 import * as UserModel from './user.model';
 import { User } from './user.model'; 
 import { CourseInSchedule, CourseFavored } from '../course/course.model';
 import { Major } from '../major/major.model';
-import { getDatabase } from '../db/mongodb';
 
 export class UserError extends Error {
     constructor(message: string) {
@@ -16,11 +15,11 @@ export class UserError extends Error {
 }
 
 export const getUser = async (userId: string): Promise<Omit<User, 'passwordHash'>> => {
-    const user = await UserModel.findById(new ObjectId(userId));
+    const user = await UserModel.findById(userId);
     if (!user) {
         throw new UserError('User not found');
     }
-    const { passwordHash, ...userData } = user;
+    const { passwordHash, ...userData } = user.toObject();
     return userData;
 };
 
@@ -43,19 +42,17 @@ export const getUserConcentrations = (
     return userMajor?.concentrationNames || [];
 };
 
-
 export const getFavoredCourses = async (uid: string): Promise<CourseFavored[]> => {
-    const user = await UserModel.findById(new ObjectId(uid));
+    const user = await UserModel.findById(uid);
     if (!user) {
         throw new UserError('User not found');
     }
     return user.favoredCourses || [];
 };
 
-
 export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored): Promise<User> => {
     try {
-        const user = await UserModel.findById(new ObjectId(uid));
+        const user = await UserModel.findById(uid);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -73,12 +70,7 @@ export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored
         }
 
         user.favoredCourses.push(newFavorite);
-
-        const db = getDatabase();
-        await db.collection(UserModel.USERS_COLLECTION).updateOne(
-            { _id: new ObjectId(uid) },
-            { $set: { favoredCourses: user.favoredCourses } }
-        );
+        await user.save();
 
         return user;
     } catch (error) {
@@ -87,10 +79,9 @@ export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored
     }
 };
 
-
 export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFavored): Promise<void> => {
     try {
-        const user = await UserModel.findById(new ObjectId(uid));
+        const user = await UserModel.findById(uid);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -114,12 +105,7 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
         }
 
         user.favoredCourses.splice(indexToDelete, 1);
-
-        const db = getDatabase();
-        await db.collection(UserModel.USERS_COLLECTION).updateOne(
-            { _id: new ObjectId(uid) },
-            { $set: { favoredCourses: user.favoredCourses } }
-        );
+        await user.save();
     } catch (error) {
         console.error('Error in deleteFavoredCourse:', error);
         throw error;
@@ -128,7 +114,7 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
 
 export const addCourseToSchedule = async (uid: string, courseData: CourseInSchedule): Promise<User> => {
     try {
-        const user = await UserModel.findById(new ObjectId(uid));
+        const user = await UserModel.findById(uid);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -163,12 +149,7 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
         }
 
         user.scheduleData.push(newCourse);
-
-        const db = getDatabase();
-        await db.collection(UserModel.USERS_COLLECTION).updateOne(
-            { _id: new ObjectId(uid) },
-            { $set: { scheduleData: user.scheduleData } }
-        );
+        await user.save();
 
         return user;
     } catch (error) {
@@ -183,7 +164,7 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
     grpIdentifier?: string;
 }): Promise<void> => {
     try {
-        const user = await UserModel.findById(new ObjectId(uid));
+        const user = await UserModel.findById(uid);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -203,12 +184,7 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
         }
 
         user.scheduleData.splice(courseIndex, 1);
-
-        const db = getDatabase();
-        await db.collection(UserModel.USERS_COLLECTION).updateOne(
-            { _id: new ObjectId(uid) },
-            { $set: { scheduleData: user.scheduleData } }
-        );
+        await user.save();
     } catch (error) {
         console.error('Error in deleteCourseFromSchedule:', error);
         throw error;
@@ -221,7 +197,7 @@ export const checkIsUserMajor = (user: User, majorId: string): boolean => {
     }
 
     return user.majors.some(userMajor => userMajor.majorId === majorId);
-}
+};
 
 
 

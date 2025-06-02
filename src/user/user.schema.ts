@@ -1,72 +1,51 @@
-// src/user/user.schema.ts
-// MongoDB schema for User model
+import { Schema, model } from 'mongoose';
+import { User, UserCollege, UserMajor } from './user.model';
+import { CourseFavored, CourseInSchedule } from '../course/course.model';
 
-import { ObjectId } from 'mongodb';
+const UserCollegeSchema = new Schema<UserCollege>({
+  collegeId: { type: String, required: true },
+  name: { type: String, required: true }
+}, { _id: false });
 
-export const userSchema = {
-  name: 'users',
-  fields: {
-    _id: { type: 'objectId' },
-    email: { type: 'string' },
-    netid: { type: 'string' },
-    firstName: { type: 'string' },
-    lastName: { type: 'string' },
-    year: { type: 'string' },
-    college: { 
-      type: 'object',
-      fields: {
-        collegeId: { type: 'string' },
-        name: { type: 'string' }
-      }
-    },
-    majors: {
-      type: 'array',
-      items: {
-        type: 'object',
-        fields: {
-          majorId: { type: 'string' },
-          name: { type: 'string' },
-          concentrationNames: { 
-            type: 'array',
-            items: { type: 'string' }
-          }
-        }
-      }
-    },
-    scheduleData: {
-      type: 'array',
-      items: {
-        type: 'object',
-        fields: {
-          _id: { type: 'string' },
-          semester: { type: 'string' },
-          credit: { type: 'number' },
-          grpIdentifier: { type: 'string' },
-          sections: { 
-            type: 'array',
-            items: { type: 'string' }
-          },
-          usedInRequirements: { 
-            type: 'array',
-            items: { type: 'string' }
-          }
-        }
-      }
-    },
-    favoredCourses: {
-      type: 'array',
-      items: {
-        type: 'object',
-        fields: {
-          _id: { type: 'string' },
-          grpIdentifier: { type: 'string' }
-        }
-      }
-    },
-    passwordHash: { type: 'string' },
-    role: { type: 'string' },
-    lastLogin: { type: 'date' },
-    createdAt: { type: 'date' },
-    updatedAt: { type: 'date' }
-  }
-}; 
+const UserMajorSchema = new Schema<UserMajor>({
+  majorId: { type: String, required: true },
+  name: { type: String, required: true },
+  concentrationNames: [{ type: String }]
+}, { _id: false });
+
+const CourseInScheduleSchema = new Schema<CourseInSchedule>({
+  _id: { type: String, required: true },
+  grpIdentifier: String,
+  usedInRequirements: { type: [String], required: true },
+  credit: { type: Number, required: true },
+  semester: { type: String, required: true },
+  sections: [String]
+});
+
+const CourseFavoredSchema = new Schema<CourseFavored>({
+  _id: { type: String, required: true },
+  grpIdentifier: String
+});
+
+const UserSchema = new Schema<User>({
+  email: { type: String, required: true, unique: true },
+  netid: { type: String, required: true, unique: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  year: { type: String, required: true },
+  college: UserCollegeSchema,
+  majors: [UserMajorSchema],
+  scheduleData: [CourseInScheduleSchema],
+  favoredCourses: [CourseFavoredSchema],
+  passwordHash: { type: String, required: true },
+  role: { type: String, enum: ['student', 'admin'], required: true },
+  lastLogin: { type: Date }
+}, { 
+  timestamps: true // This automatically handles createdAt and updatedAt
+});
+
+// Create indexes for common queries
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ netid: 1 }, { unique: true });
+
+export const UserModel = model<User>('User', UserSchema);

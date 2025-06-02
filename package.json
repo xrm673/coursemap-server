@@ -34,12 +34,10 @@
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/mongodb": "^4.0.6",
     "@types/mongoose": "^5.11.96",
     "bcrypt": "^6.0.0",
     "firebase-admin": "^13.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.16.0",
     "mongoose": "^8.15.1"
   }
 }
