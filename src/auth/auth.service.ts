@@ -3,9 +3,10 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
 import { User } from '../user/user.model';
-import { LoginCredentials, SignupData, AuthResponse } from './auth.model';
-import * as AuthModel from './auth.model';
+import { LoginCredentials, SignupData, AuthResponse } from './auth.types';
+import * as UserModel from '../user/user.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const SALT_ROUNDS = 10;
@@ -24,7 +25,7 @@ export const generateToken = (user: User): string => {
   }
 
   const payload = {
-    uid: user.uid,
+    _id: user._id?.toString(), // Convert ObjectId to string for JWT
     email: user.email,
     role: user.role
   };
@@ -42,14 +43,14 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
 
 export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
   // Check if user already exists
-  const existingUser = await AuthModel.findUserByEmail(signupData.email);
+  const existingUser = await UserModel.findUserByEmail(signupData.email);
   if (existingUser) {
     throw new AuthError('User with this email already exists');
   }
 
   // Create new user
   const passwordHash = await hashPassword(signupData.password);
-  const newUser: User = {
+  const newUser: Omit<User, '_id'> = {
     email: signupData.email,
     firstName: signupData.firstName,
     lastName: signupData.lastName,
@@ -57,11 +58,13 @@ export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
     netid: signupData.netid,
     role: signupData.role || 'student',
     year: signupData.year,
-    collegeId: signupData.collegeId,
-    majors: signupData.majors
+    college: signupData.college,
+    majors: signupData.majors,
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 
-  const createdUser = await AuthModel.createUser(newUser);
+  const createdUser = await UserModel.createUser(newUser);
   const token = generateToken(createdUser);
 
   // Return user data without password hash
@@ -73,7 +76,7 @@ export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
 };
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  const user = await AuthModel.findUserByEmail(credentials.email);
+  const user = await UserModel.findUserByEmail(credentials.email);
   if (!user || !user.passwordHash) {
     throw new AuthError('Invalid email or password');
   }
@@ -84,10 +87,10 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
   }
 
   // Update last login
-  if (!user.uid) {
+  if (!user._id) {
     throw new AuthError('User ID is missing');
   }
-  await AuthModel.updateUserLastLogin(user.uid);
+  await UserModel.updateUserLastLogin(user._id);
 
   const token = generateToken(user);
   

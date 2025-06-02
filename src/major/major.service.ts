@@ -23,7 +23,7 @@ export const getMajor = async (majorId: string): Promise<Major> => {
 
 
 export const getMajorWithRequirements = async (
-    majorId: string, uid?: string
+    majorId: string, userId?: string
 ): Promise<{
     processedMajor: ProcessedMajor,
     userCourses: CourseInSchedule[]
@@ -33,8 +33,8 @@ export const getMajorWithRequirements = async (
     let userCourses: CourseInSchedule[] = [];
     let isUserMajor: boolean = false;
     
-    if (uid) {
-        user = await getUser(uid);
+    if (userId) {
+        user = await getUser(userId) as User;
         isUserMajor = checkIsUserMajor(user, majorId);
     }
     const selectedCollegeId = getDefaultCollege(major, user);

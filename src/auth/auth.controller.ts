@@ -3,7 +3,7 @@
 
 import { Request, Response } from 'express';
 import * as AuthService from './auth.service';
-import { SignupData, LoginCredentials } from './auth.model';
+import { SignupData, LoginCredentials } from './auth.types';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {

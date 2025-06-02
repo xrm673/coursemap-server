@@ -1,10 +1,12 @@
 // src/user/user.service.ts
 // Business logic for users
 
+import { ObjectId } from 'mongodb';
 import * as UserModel from './user.model';
 import { User } from './user.model'; 
 import { CourseInSchedule, CourseFavored } from '../course/course.model';
 import { Major } from '../major/major.model';
+import { getDatabase } from '../db/mongodb';
 
 export class UserError extends Error {
     constructor(message: string) {
@@ -13,8 +15,8 @@ export class UserError extends Error {
     }
 }
 
-export const getUser = async (uid: string): Promise<Omit<User, 'passwordHash'>> => {
-    const user = await UserModel.findById(uid);
+export const getUser = async (userId: string): Promise<Omit<User, 'passwordHash'>> => {
+    const user = await UserModel.findById(new ObjectId(userId));
     if (!user) {
         throw new UserError('User not found');
     }
@@ -43,49 +45,40 @@ export const getUserConcentrations = (
 
 
 export const getFavoredCourses = async (uid: string): Promise<CourseFavored[]> => {
-    const user = await UserModel.findById(uid);
+    const user = await UserModel.findById(new ObjectId(uid));
     if (!user) {
         throw new UserError('User not found');
     }
-    
     return user.favoredCourses || [];
 };
 
 
 export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored): Promise<User> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(new ObjectId(uid));
         if (!user) {
             throw new UserError('User not found');
         }
 
-        // Initialize favoredCourses array if it doesn't exist
         if (!user.favoredCourses) {
             user.favoredCourses = [];
         }
 
-        // Create a clean favorite object without undefined values
         const newFavorite: CourseFavored = {
             _id: courseFavored._id
         };
         
-        // Only add grpIdentifier if it exists
         if (courseFavored.grpIdentifier) {
             newFavorite.grpIdentifier = courseFavored.grpIdentifier;
         }
 
-        // Add the new favored course
         user.favoredCourses.push(newFavorite);
 
-        // Update user document in Firebase
-        try {
-            await UserModel.usersCollection.doc(uid).update({
-                favoredCourses: user.favoredCourses
-            });
-        } catch (updateError) {
-            console.error('Firebase update error:', updateError);
-            throw new Error('Failed to update favorites in database');
-        }
+        const db = getDatabase();
+        await db.collection(UserModel.USERS_COLLECTION).updateOne(
+            { _id: new ObjectId(uid) },
+            { $set: { favoredCourses: user.favoredCourses } }
+        );
 
         return user;
     } catch (error) {
@@ -97,7 +90,7 @@ export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored
 
 export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFavored): Promise<void> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(new ObjectId(uid));
         if (!user) {
             throw new UserError('User not found');
         }
@@ -106,14 +99,11 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
             throw new UserError('No favored courses found');
         }
 
-        // Find index of the course that matches exactly (both courseId and grpIdentifier if present)
         const indexToDelete = user.favoredCourses.findIndex(course => {
             if (courseToDelete.grpIdentifier) {
-                // If grpIdentifier is provided, both courseId and grpIdentifier must match
                 return course._id === courseToDelete._id && 
                        course.grpIdentifier === courseToDelete.grpIdentifier;
             } else {
-                // If no grpIdentifier provided, only match courses without grpIdentifier
                 return course._id === courseToDelete._id && 
                        !course.grpIdentifier;
             }
@@ -123,13 +113,13 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
             throw new UserError('Course not found in favorites');
         }
 
-        // Remove the course
         user.favoredCourses.splice(indexToDelete, 1);
 
-        // Update user document in Firebase
-        await UserModel.usersCollection.doc(uid).update({
-            favoredCourses: user.favoredCourses
-        });
+        const db = getDatabase();
+        await db.collection(UserModel.USERS_COLLECTION).updateOne(
+            { _id: new ObjectId(uid) },
+            { $set: { favoredCourses: user.favoredCourses } }
+        );
     } catch (error) {
         console.error('Error in deleteFavoredCourse:', error);
         throw error;
@@ -138,17 +128,15 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
 
 export const addCourseToSchedule = async (uid: string, courseData: CourseInSchedule): Promise<User> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(new ObjectId(uid));
         if (!user) {
             throw new UserError('User not found');
         }
 
-        // Initialize scheduleData if it doesn't exist
         if (!user.scheduleData) {
             user.scheduleData = [];
         }
 
-        // Check for exact duplicate in the same semester
         const isDuplicate = user.scheduleData.some(course => 
             course.semester === courseData.semester &&
             course._id === courseData._id &&
@@ -159,7 +147,6 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
             throw new UserError('This exact course is already in your schedule for this semester');
         }
 
-        // Add the new course
         const newCourse: CourseInSchedule = {
             _id: courseData._id,
             semester: courseData.semester,
@@ -177,10 +164,11 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
 
         user.scheduleData.push(newCourse);
 
-        // Update user document in Firebase
-        await UserModel.usersCollection.doc(uid).update({
-            scheduleData: user.scheduleData
-        });
+        const db = getDatabase();
+        await db.collection(UserModel.USERS_COLLECTION).updateOne(
+            { _id: new ObjectId(uid) },
+            { $set: { scheduleData: user.scheduleData } }
+        );
 
         return user;
     } catch (error) {
@@ -195,7 +183,7 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
     grpIdentifier?: string;
 }): Promise<void> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(new ObjectId(uid));
         if (!user) {
             throw new UserError('User not found');
         }
@@ -204,7 +192,6 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
             throw new UserError('No schedule data found');
         }
 
-        // Find the course index
         const courseIndex = user.scheduleData.findIndex(course => 
             course.semester === courseData.semester &&
             course._id === courseData._id &&
@@ -215,13 +202,13 @@ export const deleteCourseFromSchedule = async (uid: string, courseData: {
             throw new UserError('Course not found in schedule');
         }
 
-        // Remove the course
         user.scheduleData.splice(courseIndex, 1);
 
-        // Update user document in Firebase
-        await UserModel.usersCollection.doc(uid).update({
-            scheduleData: user.scheduleData
-        });
+        const db = getDatabase();
+        await db.collection(UserModel.USERS_COLLECTION).updateOne(
+            { _id: new ObjectId(uid) },
+            { $set: { scheduleData: user.scheduleData } }
+        );
     } catch (error) {
         console.error('Error in deleteCourseFromSchedule:', error);
         throw error;

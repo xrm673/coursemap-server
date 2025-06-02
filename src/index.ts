@@ -7,7 +7,7 @@ import { userRouter } from './user/user.routes';
 import { requirementRouter } from './requirement/requirement.routes';
 import { collegeRouter } from './college/college.routes';
 import { authRouter } from './auth/auth.routes';
-import { connectDB } from './db/mongodb';
+import { connectToDatabase } from './db/mongodb';
 
 // Load environment variables
 dotenv.config();
@@ -35,7 +35,7 @@ app.get('/health', (req, res) => {
 // Initialize MongoDB connection and start server
 const startServer = async () => {
   try {
-    await connectDB();
+    await connectToDatabase();
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });
