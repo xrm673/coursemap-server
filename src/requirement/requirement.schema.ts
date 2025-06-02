@@ -2,7 +2,6 @@ import { Schema, model } from 'mongoose';
 import { CourseGroup, CourseWithGrpTopic, Requirement } from './requirement.model';
 
 const CourseGroupSchema = new Schema<CourseGroup>({
-  _id: { type: Number, required: true },
   topic: String,
   courseIds: { type: [String], required: true },
   notes: String

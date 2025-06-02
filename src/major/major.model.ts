@@ -11,39 +11,16 @@ export interface Major {
     description?: string;
     needsYear: boolean;
     needsCollege: boolean;
-    colleges: Array<{
-        id: string;
-        name: string;
-    }>;
-    requiredCourseNumber?: Number,
-    basicRequirements: Array<{
-        year?: string;
-        college?: string;
-        requirements: string[];
-    }>;
-    concentrations?: Array<{
-        concentration: string;
-        requirements: string[];
-    }>;
-    endRequirements?: Array<{
-        year?: string;
-        college?: string;
-        requirements: string[];
-    }>;
+    colleges: Array<CollegeInMajor>;
+    numberOfRequiredCourses?: Number,
+    rawBasicRequirements: Array<RawBasicRequirement>;
+    concentrations?: Array<Concentration>;
+    rawEndRequirements?: Array<RawEndRequirement>;
     onboardingCourses: string[];
 }
 
 // provided to frontend
-export interface ProcessedMajor {
-    id: string;
-    name: string;
-    description?: string;
-    needsYear: boolean;
-    needsCollege: boolean;
-    colleges: Array<{
-        id: string;
-        name: string;
-    }>;
+export interface ProcessedMajor extends Omit<Major, 'rawBasicRequirements' | 'rawEndRequirements'> {
     selectedCollegeId: string;
     selectedYear: string;
     basicRequirements: ProcessedRequirement[];
@@ -52,6 +29,28 @@ export interface ProcessedMajor {
         requirements: ProcessedRequirement[];
     }>;
     endRequirements?: ProcessedRequirement[];
+}
+
+export interface CollegeInMajor {
+    collegeId: string;
+    name: string;
+}
+
+export interface RawBasicRequirement {
+    year?: string;
+    college?: string;
+    requirements: string[];
+}
+
+export interface Concentration {
+    concentrationName: string;
+    requirements: string[];
+}
+
+export interface RawEndRequirement {
+    year?: string;
+    college?: string;
+    requirements: string[];
 }
 
 /*

@@ -23,7 +23,6 @@ export interface Requirement {
 }
 
 export interface CourseGroup {
-    _id: number;
     topic?: string;
     courseIds: Array<string>;
     notes?: string;

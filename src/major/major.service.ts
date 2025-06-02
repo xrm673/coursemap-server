@@ -60,7 +60,7 @@ export const getMajorWithRequirements = async (
 
     // Get end requirements if they exist
     let endRequirements: ProcessedRequirement[] = [];
-    if (majorDetails.endRequirements) {
+    if (majorDetails.rawEndRequirements) {
         const result = await getEndRequirements(
             majorDetails, selectedCollegeId, selectedYear, userDetails
         );
@@ -69,12 +69,13 @@ export const getMajorWithRequirements = async (
     }
 
     const processedMajor: ProcessedMajor = {
-        id: majorDetails._id,
+        _id: majorDetails._id,
         name: majorDetails.name,
         description: majorDetails.description,
         needsYear: majorDetails.needsYear,
         needsCollege: majorDetails.needsCollege,
         colleges: majorDetails.colleges,
+        onboardingCourses: majorDetails.onboardingCourses,
         selectedCollegeId,
         selectedYear,
         basicRequirements,
@@ -97,7 +98,7 @@ export const getBasicRequirements = async (
     basicRequirements: ProcessedRequirement[],
     userCoursesAfterBasic: CourseInSchedule[]
 }> => {
-    const basicReqs = majorDetails.basicRequirements?.find(
+    const basicReqs = majorDetails.rawBasicRequirements?.find(
         req => {
           const yearMatches = !majorDetails.needsYear || req.year === selectedYear;
           const collegeMatches = !majorDetails.needsCollege || req.college === selectedCollegeId;
@@ -158,7 +159,7 @@ export const getConcentrationRequirements = async (
 
     for (const concentration of userConcentrations) {
         const concentrationReqs = majorDetails.concentrations?.find(
-            req => req.concentration === concentration
+            req => req.concentrationName === concentration
         );
         if (concentrationReqs) {
             const {
@@ -194,7 +195,7 @@ export const getEndRequirements = async (
     userCoursesAfterEnd: CourseInSchedule[]
 }> => {
 
-    const endReqs = majorDetails.endRequirements?.find(
+    const endReqs = majorDetails.rawEndRequirements?.find(
         req => {
             const yearMatches = !majorDetails.needsYear || req.year === selectedYear;
             const collegeMatches = !majorDetails.needsCollege || req.college === selectedCollegeId;
@@ -231,12 +232,12 @@ export const getEndRequirements = async (
 */
 export const getDefaultCollege = (majorDetails: Major, userDetails?: User) : string => {
     // If user exists and their college is in the major's colleges, use it
-    if (userDetails && userDetails.collegeId && majorDetails.colleges.find(college => college.id === userDetails.collegeId)) {
+    if (userDetails && userDetails.collegeId && majorDetails.colleges.find(college => college.collegeId === userDetails.collegeId)) {
         return userDetails.collegeId;
     }
 
     // Otherwise return the first college from the major's colleges
-    return majorDetails.colleges[0]?.id || '';
+    return majorDetails.colleges[0]?.collegeId || '';
 };
 
 
@@ -263,7 +264,6 @@ export const getConcentrations = (majorDetails: Major): string[] => {
     }
 
     // Extract all concentration names from the major's concentrations
-    return majorDetails.concentrations.map(concentration => concentration.concentration);
+    return majorDetails.concentrations.map(concentration => concentration.concentrationName);
 };
-
 
