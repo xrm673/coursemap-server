@@ -1,8 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { Course } from './course.model';
+import { Course, EnrollGroup, Meeting, Section } from './course.model';
 
-const MeetingSchema = new Schema({
-    no: Number,
+const MeetingSchema = new Schema<Meeting>({
     stTm: String,
     edTm: String,
     stDt: String,
@@ -11,7 +10,7 @@ const MeetingSchema = new Schema({
     topic: String
   }, { _id: false });
 
-const SectionSchema = new Schema({
+const SectionSchema = new Schema<Section>({
     semester: String,
     type: String,
     nbr: String,
@@ -21,7 +20,7 @@ const SectionSchema = new Schema({
     location: String
 }, { _id: false });
 
-const EnrollGroupSchema = new Schema({
+const EnrollGroupSchema = new Schema<EnrollGroup>({
   grpIdentifier: { type: String, required: true },
   hasTopic: { type: Boolean, required: true },
   grpSmst: [String],
@@ -59,21 +58,22 @@ const CourseSchema = new Schema<Course>({
   sbj: { type: String, required: true },
   nbr: { type: String, required: true },
   lvl: { type: Number, required: true },
-  smst: [String],
+  smst: { type: [String], required: true },
   ttl: { type: String, required: true },
   tts: { type: String, required: true },
-  grpIdentifier: String,
   dsrpn: { type: String, required: true },
-  when: [String],
-  breadth: String,
-  distr: [String],
-  attr: [String],
-  fee: String,
-  satisfies: String,
   otcm: [String],
-  subfield: String,
-  career: String,
-  acadgrp: String,
+  distr: [String],
+  metadata: {
+    when: [String],
+    breadth: String,
+    attr: [String],
+    fee: String,
+    satisfies: String,
+    subfield: String,
+    career: String,
+    acadgrp: String,
+  },
   eligibility: {
     cmts: String,
     rcmdReq: String,

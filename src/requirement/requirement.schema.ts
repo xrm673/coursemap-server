@@ -5,12 +5,12 @@ const CourseGroupSchema = new Schema<CourseGroup>({
   topic: String,
   courseIds: { type: [String], required: true },
   notes: String
-});
+}, { _id: false });
 
 const CourseWithGrpTopicSchema = new Schema<CourseWithGrpTopic>({
   courseId: { type: String, required: true },
   grpIdentifier: { type: String, required: true }
-});
+}, { _id: false });
 
 const RequirementSchema = new Schema<Requirement>({
   _id: { type: String, required: true, unique: true },

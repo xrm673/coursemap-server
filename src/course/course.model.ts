@@ -13,16 +13,18 @@ export interface Course {
   tts: string; // title (short)
   grpIdentifier?: string; // only specified when the course has topic and has one enrol group
   dsrpn: string; // description
-  when?: Array<string>; // when (semester category) the course is offered, not accurate
-  breadth?: string; // breadth category
-  distr?: Array<string>; // distribution category
-  attr?: Array<string>; // attributes
-  fee?: string; // course fee
-  satisfies?: string; // satisfies requirement
   otcm?: Array<string>; // outcomes of the course
-  subfield?: string;
-  career?: string;
-  acadgrp?: string;
+  distr?: Array<string>; // distribution categories
+  metadata: {
+    when?: Array<string>; // when (semester category) the course is offered, not accurate
+    breadth?: string; // breadth category
+    attr?: Array<string>; // attributes
+    fee?: string; // course fee
+    satisfies?: string; // satisfies requirement
+    subfield?: string;
+    career?: string;
+    acadgrp?: string;
+  }
   eligibility: {
     cmts?: string; // comments
     rcmdReq?: string; //recommend Prerequisite or Corequisite requirement in text
@@ -42,116 +44,119 @@ export interface Course {
     ovlp?: Array<string>; // overlap courses
     pmsn?: string; // enrollment permission requirement
   }
-  enrollGroups : Array<
-    {
-      // identifier of the enrollment group
-      // 1. If any section of the enrollment group has a topic, 
-      //    use that topic as the identifier
-      // 2. If no topic exists, and there's a section with type "IND" (independent study), 
-      //    use the first instructor's lastname as the identifier
-      // 3. If neither of the above, use the first section's key 
-      //    (e.g., "PRJ-601") as the identifier
-      grpIdentifier: string;
+  enrollGroups : Array<EnrollGroup>
+}
 
-      // true if the identifier is a topic
-      hasTopic: boolean; 
+export interface EnrollGroup {
+  // identifier of the enrollment group
+  // 1. If any section of the enrollment group has a topic, 
+  //    use that topic as the identifier
+  // 2. If no topic exists, and there's a section with type "IND" (independent study), 
+  //    use the first instructor's lastname as the identifier
+  // 3. If neither of the above, use the first section's key 
+  //    (e.g., "PRJ-601") as the identifier
+  grpIdentifier: string;
 
-      // updated for early semesters
-      // semesters the enrollment group with the same identifier is offered in
-      grpSmst: Array<string>; 
+  // true if the identifier is a topic
+  hasTopic: boolean; 
 
-      // credit options of the enrollment group (use the latest semester provided)
-      credits: Array<number>;
+  // updated for early semesters
+  // semesters the enrollment group with the same identifier is offered in
+  grpSmst: Array<string>; 
 
-      // grading basis (e.g., "GRD", "OPT")
-      grading: string;
+  // credit options of the enrollment group (use the latest semester provided)
+  credits: Array<number>;
 
-      // list of compoenents (sections) in the latest semester provided
-      components: Array<string>;
+  // grading basis (e.g., "GRD", "OPT")
+  grading: string;
 
-      // list of optional components (sections) in the latest semester provided
-      componentsOptional?: Array<string>;
+  // list of compoenents (sections) in the latest semester provided
+  components: Array<string>;
 
-      // overall rating from CU Review
-      // add later
-      // ov?: number; 
+  // list of optional components (sections) in the latest semester provided
+  componentsOptional?: Array<string>;
 
-      // difficulty from CU Review
-      // df?: number; 
+  // overall rating from CU Review
+  // add later
+  // ov?: number; 
 
-      // updated for early semesters
-      instructors?: Array<{
-        semester: string;
-        netids: Array<string>;
-      }>;
+  // difficulty from CU Review
+  // df?: number; 
 
-      // true if it has a section that is offered long time out of Ithaca
-      locationConflicts?: boolean;
+  // updated for early semesters
+  instructors?: Array<{
+    semester: string;
+    netids: Array<string>;
+  }>;
 
-      // consent requirement of the first section 
-      // ("I" for instructor or "D" for department)
-      // we assume that groups requiring department consent are limited to the major's students only
-      consent?: string;
+  // true if it has a section that is offered long time out of Ithaca
+  locationConflicts?: boolean;
 
-      // group session (e.g., "1", "7W2")
-      session?: string;
+  // consent requirement of the first section 
+  // ("I" for instructor or "D" for department)
+  // we assume that groups requiring department consent are limited to the major's students only
+  consent?: string;
 
-      // instruction mode of the first section; (not displayed if in-person)
-      mode?: string; 
+  // group session (e.g., "1", "7W2")
+  session?: string;
 
-      // updated for early semesters
-      // only for semesters in current year (max length 4)
-      sections?: Array<{
-        semester: string; //  must be in current year
-        type: string; // "LEC", "LAB", "DIS", "IND", etc.
-        nbr: string; // "001", "601", etc.
-        meetings: Array<{
-          no: number; // "1", "2", etc.
-          stTm: string; // "01:25PM"
-          edTm: string; // "02:40PM"
-          stDt: string; // "08/25/2025"
-          edDt: string; // "12/13/2025"
-          pt: string; // "MW", "TH", etc.
-          topic?: string; // topic of the meeting
-        }>;
-        open?: string; // "C" for closed, "W" for waitlist
-        mode?: string; // not displayed if in-person
-        location?: string; // only displayed if it's not offered in Ithaca
-      }>;
+  // instruction mode of the first section; (not displayed if in-person)
+  mode?: string; 
 
-      // combined courses (groups)
-      comb?: Array<{
-        courseId: string; 
-        // grpIdentifier: string; // TODO: can only be updated when the database is established
-        type: string;
-      }>;
+  // updated for early semesters
+  // only for semesters in current year (max length 4)
+  sections?: Array<Section>;
 
-      // enrollement limitation from notes
-      limitation?: string;
+  // combined courses (groups)
+  comb?: Array<{
+    courseId: string; 
+    // grpIdentifier: string; // TODO: can only be updated when the database is established
+    type: string;
+  }>;
 
-      // majorOnly?: Array<string>; // only students in the majors can take this course (group)
-      // majorNo?: Array<string>; // students in the majors cannot take this course (group)
-      // collegeOnly?: Array<string>; // only students in the colleges can take this course (group)
-      // collegeNo?: Array<string>; // students in the colleges cannot take this course (group)
-      // graduateOnly?: boolean; // only graduate students can take this course (group)
+  // enrollement limitation from notes
+  limitation?: string;
 
-      // prereq from notes
-      grpprereq?: Array<{
-        courses: Array<string>;
-      }>;
+  // majorOnly?: Array<string>; // only students in the majors can take this course (group)
+  // majorNo?: Array<string>; // students in the majors cannot take this course (group)
+  // collegeOnly?: Array<string>; // only students in the colleges can take this course (group)
+  // collegeNo?: Array<string>; // students in the colleges cannot take this course (group)
+  // graduateOnly?: boolean; // only graduate students can take this course (group)
 
-      // coreq from notes
-      grpcoreq?: Array<{
-        courses: Array<string>;
-      }>;
+  // prereq from notes
+  grpprereq?: Array<{
+    courses: Array<string>;
+  }>;
 
-      // preco from notes
-      grppreco?: Array<{
-        courses: Array<string>;
-      }>;
+  // coreq from notes
+  grpcoreq?: Array<{
+    courses: Array<string>;
+  }>;
 
-    }
-  >
+  // preco from notes
+  grppreco?: Array<{
+    courses: Array<string>;
+  }>;
+
+}
+
+export interface Section {
+  semester: string; //  must be in current year
+  type: string; // "LEC", "LAB", "DIS", "IND", etc.
+  nbr: string; // "001", "601", etc.
+  meetings: Array<Meeting>;
+  open?: string; // "C" for closed, "W" for waitlist
+  mode?: string; // not displayed if in-person
+  location?: string; // only displayed if it's not offered in Ithaca
+}
+
+export interface Meeting {
+  stTm: string; // "01:25PM"
+  edTm: string; // "02:40PM"
+  stDt: string; // "08/25/2025"
+  edDt: string; // "12/13/2025"
+  pt: string; // "MW", "TH", etc.
+  topic?: string; // topic of the meeting
 }
 
 export interface NoDataCourse {
