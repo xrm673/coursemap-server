@@ -2,52 +2,57 @@
 
 A server application for the CU Explore project.
 
-## Description
+## Prerequisites
 
-This repository contains the server-side code for the CU Explore project. It provides the backend services and APIs required for the application.
-
-## Getting Started
-
-### Prerequisites
-- Node.js
+- Node.js (v18 or higher)
 - npm
-- Firebase service account key
+- MongoDB
 
-### Environment Setup
+## Environment Variables
 
-1. Copy the example environment file:
-```bash
-cp .env.example .env
-```
+The following environment variables are required:
 
-2. Edit the `.env` file and set your Firebase service account path:
-```
-FIREBASE_SERVICE_ACCOUNT_PATH=/Users/YOUR_USERNAME/.config/firebase/service-account.json
-```
+- MongoDB connection string
+- JWT secret key
 
-3. Place your Firebase service account key in the specified location:
-```bash
-mkdir -p ~/.config/firebase
-mv /path/to/your-firebase-key.json ~/.config/firebase/service-account.json
-```
-
-### Installation
+## Setup
 
 1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Build the project:
+2. Create a `.env` file in the root directory with the following content:
+```
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+PORT=5001
+```
+
+3. Build the TypeScript code:
 ```bash
 npm run build
 ```
 
-3. Run in development mode:
+4. Start the server:
+```bash
+npm start
+```
+
+For development, you can use:
 ```bash
 npm run dev
 ```
 
+## API Documentation
+
+The API provides endpoints for:
+- User authentication
+- Course management
+- Major requirements
+- College information
+- Schedule planning
+
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+ISC 
