@@ -197,11 +197,11 @@ export interface CourseInScheduleForRequirement extends CourseInSchedule {
 }
 
 export const findById = async (_id: string): Promise<Course | null> => {
-  return await CourseModel.findOne({ _id });
+  return await CourseModel.findOne({ _id }).lean();
 };
 
 export const findByIds = async (_ids: string[]): Promise<Course[]> => {
-  return await CourseModel.find({ _id: { $in: _ids } });
+  return await CourseModel.find({ _id: { $in: _ids } }).lean();
 };
 
 /*
