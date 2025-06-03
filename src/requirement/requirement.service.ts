@@ -42,12 +42,12 @@ export const processRequirements = async (
             processedRequirements.push({
                 _id: reqDetails._id,
                 type: reqDetails.type,
-                major: reqDetails.major,
+                majorId: reqDetails.majorId,
                 name: reqDetails.name,
                 tag: reqDetails.tag,
                 tagDescr: reqDetails.tagDescr,
                 descr: reqDetails.descr,
-                number: reqDetails.number,
+                numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
                 courseIds: reqDetails.courseIds,
                 courseWithGrpTopics: reqDetails.courseWithGrpTopics,
                 courseGrps: reqDetails.courseGrps,
@@ -92,12 +92,12 @@ export const processElective = async (
     const processedRequirement: ProcessedRequirement = {
         _id: reqDetails._id,
         type: reqDetails.type,
-        major: reqDetails.major,
+        majorId: reqDetails.majorId,
         name: reqDetails.name,
         tag: reqDetails.tag,
         tagDescr: reqDetails.tagDescr,
         descr: reqDetails.descr,
-        number: reqDetails.number,
+        numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
         courseWithGrpTopics: reqDetails.courseWithGrpTopics,
         courseGrps: reqDetails.courseGrps,
@@ -153,7 +153,7 @@ export const processElective = async (
     processedRequirement.eligibleButNotUsedCourses = await fetchCoursesInSchedule(eligible);
 
     processedRequirement.completed = 
-        processedRequirement.takenCourses.length >= (reqDetails.number || 0);
+        processedRequirement.takenCourses.length >= (reqDetails.numberOfRequiredCourses || 0);
 
     return { processedRequirement, userCourses: updatedUserCourses };
 };
@@ -172,12 +172,12 @@ export const processCore = async (
     const processedRequirement: ProcessedRequirement = {
         _id: reqDetails._id,
         type: reqDetails.type,
-        major: reqDetails.major,
+        majorId: reqDetails.majorId,
         name: reqDetails.name,
         tag: reqDetails.tag,
         tagDescr: reqDetails.tagDescr,
         descr: reqDetails.descr,
-        number: reqDetails.number,
+        numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
         courseWithGrpTopics: reqDetails.courseWithGrpTopics,
         courseGrps: reqDetails.courseGrps,
@@ -237,7 +237,7 @@ export const processCore = async (
     processedRequirement.eligibleButNotUsedCourses = await fetchCoursesInSchedule(eligible);
 
     processedRequirement.completed = 
-        processedRequirement.takenCourses.length >= (reqDetails.number || 0);
+        processedRequirement.takenCourses.length >= (reqDetails.numberOfRequiredCourses || 0);
 
     return { processedRequirement, userCourses };
 };

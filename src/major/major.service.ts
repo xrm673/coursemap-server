@@ -104,7 +104,7 @@ export const getBasicRequirements = async (
     const basicReqs = major.rawBasicRequirements?.find(
         req => {
           const yearMatches = !major.needsYear || req.year === selectedYear;
-          const collegeMatches = !major.needsCollege || req.college === selectedCollegeId;
+          const collegeMatches = !major.needsCollege || req.collegeId === selectedCollegeId;
           return yearMatches && collegeMatches;
         }
     );
@@ -201,7 +201,7 @@ export const getEndRequirements = async (
     const endReqs = major.rawEndRequirements?.find(
         req => {
             const yearMatches = !major.needsYear || req.year === selectedYear;
-            const collegeMatches = !major.needsCollege || req.college === selectedCollegeId;
+            const collegeMatches = !major.needsCollege || req.collegeId === selectedCollegeId;
             return yearMatches && collegeMatches;
         }
     );

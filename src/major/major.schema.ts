@@ -8,7 +8,7 @@ const CollegeInMajorSchema = new Schema<CollegeInMajor>({
 
 const RawBasicRequirementSchema = new Schema<RawBasicRequirement>({
   year: String,
-  college: String,
+  collegeId: String,
   requirements: { type: [String], required: true }
 });
 
@@ -19,7 +19,7 @@ const ConcentrationSchema = new Schema<Concentration>({
 
 const RawEndRequirementSchema = new Schema<RawEndRequirement>({
   year: String,
-  college: String,
+  collegeId: String,
   requirements: { type: [String], required: true }
 });
 

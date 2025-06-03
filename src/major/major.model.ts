@@ -39,7 +39,7 @@ export interface CollegeInMajor {
 
 export interface RawBasicRequirement {
     year?: string;
-    college?: string;
+    collegeId?: string;
     requirements: string[];
 }
 
@@ -50,7 +50,7 @@ export interface Concentration {
 
 export interface RawEndRequirement {
     year?: string;
-    college?: string;
+    collegeId?: string;
     requirements: string[];
 }
 

@@ -8,12 +8,12 @@ import { FetchedCourseInSchedule } from '../course/course.model';
 export interface Requirement {
     _id: string;
     type: string;
-    major: string;
+    majorId: string;
     name: string;
     tag: string;
     tagDescr: string;
     descr: string[];
-    number?: number; // total number of courses required
+    numberOfRequiredCourses?: number; // total number of courses required
     // an array of course ids (for elective requirements)
     courseIds?: Array<string>
     courseWithGrpTopics?: Array<CourseWithGrpTopic>;
