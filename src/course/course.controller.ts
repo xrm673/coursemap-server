@@ -16,4 +16,17 @@ export const getCourseById = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// Other controller methods...
+export const getCoursesByIds = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { courseIds } = req.body;
+    if (!courseIds || !Array.isArray(courseIds) || courseIds.some(id => typeof id !== 'string')) {
+      res.status(400).json({ error: "Invalid input: 'ids' must be an array of strings." });
+      return;
+    }
+    const courses = await CourseService.getCoursesByIds(courseIds as string[]);
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error fetching courses by IDs:', error);
+    res.status(500).json({ error: 'Internal server error while fetching courses' });
+  }
+};
