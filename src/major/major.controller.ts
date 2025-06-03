@@ -23,7 +23,7 @@ export const getMajorWithRequirements = async (
     try {
         const { majorId } = req.params;
         // If user is authenticated, pass the uid, otherwise pass undefined
-        const result = await MajorService.getMajorWithRequirements(majorId, req.user?.uid);
+        const result = await MajorService.getMajorWithRequirements(majorId, req.user?._id);
         res.status(200).json(result);
     } catch (error) {
         console.error('Error getting major requirements:', error);

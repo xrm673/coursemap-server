@@ -11,7 +11,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
             res.status(401).json({ error: 'Authentication required' });
             return;
         }
-        const userData = await UserService.getUser(requestingUser.uid);
+        const userData = await UserService.getUser(requestingUser._id);
         res.status(200).json(userData);
     } catch (error) {
         if (error instanceof UserService.UserError) {
@@ -36,7 +36,7 @@ export const getFavoredCourses = async (req: Request, res: Response): Promise<vo
             return;
         }
 
-        const favoredCourses = await UserService.getFavoredCourses(requestingUser.uid);
+        const favoredCourses = await UserService.getFavoredCourses(requestingUser._id);
         res.status(200).json(favoredCourses);
     } catch (error) {
         if (error instanceof UserService.UserError) {
@@ -67,7 +67,7 @@ export const addFavoredCourse = async (req: Request, res: Response): Promise<voi
             return;
         }
 
-        const updatedUser = await UserService.addFavoredCourse(requestingUser.uid, {
+        const updatedUser = await UserService.addFavoredCourse(requestingUser._id, {
             _id: courseId,
             grpIdentifier
         });
@@ -105,7 +105,7 @@ export const deleteFavoredCourse = async (req: Request, res: Response): Promise<
             return;
         }
 
-        await UserService.deleteFavoredCourse(requestingUser.uid, {
+        await UserService.deleteFavoredCourse(requestingUser._id, {
             _id: courseId,
             grpIdentifier
         });
@@ -138,7 +138,7 @@ export const addCourseToSchedule = async (req: Request, res: Response): Promise<
         const courseData = req.body;
         
         // Validate required fields
-        if (!courseData.id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
+        if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
             res.status(400).json({ error: 'Missing required fields: id, semester, credit, and usedInRequirements are required' });
             return;
         }
@@ -161,7 +161,7 @@ export const addCourseToSchedule = async (req: Request, res: Response): Promise<
             return;
         }
 
-        const updatedUser = await UserService.addCourseToSchedule(requestingUser.uid, courseData);
+        const updatedUser = await UserService.addCourseToSchedule(requestingUser._id, courseData);
 
         res.status(200).json({
             message: 'Course added to schedule',
@@ -197,7 +197,7 @@ export const deleteCourseFromSchedule = async (req: Request, res: Response): Pro
             return;
         }
 
-        await UserService.deleteCourseFromSchedule(requestingUser.uid, {
+        await UserService.deleteCourseFromSchedule(requestingUser._id, {
             _id,
             semester,
             grpIdentifier

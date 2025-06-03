@@ -42,17 +42,17 @@ export const getUserConcentrations = (
     return userMajor?.concentrationNames || [];
 };
 
-export const getFavoredCourses = async (uid: string): Promise<CourseFavored[]> => {
-    const user = await UserModel.findById(uid);
+export const getFavoredCourses = async (userId: string): Promise<CourseFavored[]> => {
+    const user = await UserModel.findById(userId);
     if (!user) {
         throw new UserError('User not found');
     }
     return user.favoredCourses || [];
 };
 
-export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored): Promise<User> => {
+export const addFavoredCourse = async (userId: string, courseFavored: CourseFavored): Promise<User> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -79,9 +79,9 @@ export const addFavoredCourse = async (uid: string, courseFavored: CourseFavored
     }
 };
 
-export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFavored): Promise<void> => {
+export const deleteFavoredCourse = async (userId: string, courseToDelete: CourseFavored): Promise<void> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -112,9 +112,9 @@ export const deleteFavoredCourse = async (uid: string, courseToDelete: CourseFav
     }
 };
 
-export const addCourseToSchedule = async (uid: string, courseData: CourseInSchedule): Promise<User> => {
+export const addCourseToSchedule = async (userId: string, courseData: CourseInSchedule): Promise<User> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
@@ -158,13 +158,13 @@ export const addCourseToSchedule = async (uid: string, courseData: CourseInSched
     }
 };
 
-export const deleteCourseFromSchedule = async (uid: string, courseData: {
+export const deleteCourseFromSchedule = async (userId: string, courseData: {
     _id: string;
     semester: string;
     grpIdentifier?: string;
 }): Promise<void> => {
     try {
-        const user = await UserModel.findById(uid);
+        const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
