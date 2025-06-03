@@ -1,55 +1,39 @@
-import { db } from '../../db/firebase-admin';
+import { Document } from 'mongoose';
+import { CollegeModel } from './college.schema';
 
-export interface College {
-    id: string;
+export interface MajorInCollege {
+    majorId: string;
     name: string;
-    majors: Array<{
-        id: string;
-        name: string;
-    }>;
 }
 
-const collegesCollection = db.collection('colleges');
+export interface College extends Document {
+    name: string;
+    majors: MajorInCollege[];
+}
 
 /*
-    Find all colleges
-*/
+ * Find all colleges
+ */
 export const find = async (): Promise<College[]> => {
-    const snapshot = await collegesCollection.get();
-    return snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-    } as College));
+    return CollegeModel.find().lean();
 };
 
 /*
-    Find a college by its id
-*/
+ * Find a college by its id
+ */
 export const findById = async (id: string): Promise<College | null> => {
-    const doc = await collegesCollection.doc(id).get();
-    if (!doc.exists) return null;
-    return { 
-        id: doc.id, 
-        ...doc.data() 
-    } as College;
+    return CollegeModel.findById(id).lean();
 };
 
 /*
-    Search colleges by major name
-*/
+ * Search colleges by major name
+ */
 export const searchByMajor = async (query: string): Promise<College[]> => {
-    const snapshot = await collegesCollection.get();
-    const colleges = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-    } as College));
-
-    return colleges
-        .map(college => ({
-            ...college,
-            majors: college.majors.filter(major => 
-                major.name.toLowerCase().includes(query.toLowerCase())
-            )
-        }))
-        .filter(college => college.majors.length > 0);
+    // Using MongoDB's $regex for case-insensitive search
+    return CollegeModel.find({
+        'majors.name': { 
+            $regex: query, 
+            $options: 'i' // case-insensitive
+        }
+    }).lean();
 };
