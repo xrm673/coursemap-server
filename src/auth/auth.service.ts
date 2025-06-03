@@ -8,7 +8,7 @@ import { UserModel } from '../user/user.schema';
 import { User } from '../user/user.model';
 import { LoginCredentials, SignupData, AuthResponse } from './auth.types';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET!;
 const SALT_ROUNDS = 10;
 const TOKEN_EXPIRY = '24h';
 
