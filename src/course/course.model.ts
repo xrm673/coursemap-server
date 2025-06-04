@@ -229,69 +229,72 @@ export const findCoursesWithInstructorsByIds = async (
   const pipeline: any[] = [
     { $match: { _id: { $in: _ids } } },
 
-    // Unwind enrollGroups, keeping courses that might have empty/null enrollGroups
     { $unwind: { path: "$enrollGroups", preserveNullAndEmptyArrays: true } },
-
-    // Unwind instructorIds within enrollGroups, keeping EGs that might have empty/null instructorIds
-    // If $enrollGroups is null from the previous unwind, $enrollGroups.instructorIds will also be null.
     { $unwind: { path: "$enrollGroups.instructorIds", preserveNullAndEmptyArrays: true } },
 
-    // Lookup instructors for the netids.
     {
       $lookup: {
-        from: "instructors", // Collection name for InstructorModel
+        from: "instructors",
         let: { netidsToSearch: { $ifNull: ["$enrollGroups.instructorIds.netids", []] } },
         pipeline: [
           { $match: { $expr: { $in: ["$netid", "$$netidsToSearch"] } } },
-          // Optional: Add a $project stage here if Instructor schema in DB has extra fields not in Instructor interface
         ],
         as: "instructorsMatchedForEachSemesterEntry"
       }
     },
 
-    // Group by course and enrollGroup to reconstruct instructor list per semester for each EG
     {
       $group: {
         _id: {
           courseId: "$_id",
-          // If enrollGroups was null (course had no EGs), grpIdentifier will be null.
           enrollGroupGrpIdentifier: "$enrollGroups.grpIdentifier"
         },
-        courseStaticFields: { $first: "$$ROOT" }, // Keep all original fields of the course for later use
-        originalSingleEnrollGroup: { $first: "$enrollGroups" }, // The specific EG being processed (or null)
-        // Create the list of {semester, instructor[]} for the current enrollGroup
+        // Explicitly carry forward original top-level course fields
+        // These fields are present on the document after unwinding
+        sbj: { $first: "$sbj" },
+        nbr: { $first: "$nbr" },
+        lvl: { $first: "$lvl" },
+        smst: { $first: "$smst" },
+        ttl: { $first: "$ttl" },
+        tts: { $first: "$tts" },
+        courseLevelGrpIdentifier: { $first: "$grpIdentifier" }, // Course's own grpIdentifier
+        dsrpn: { $first: "$dsrpn" },
+        otcm: { $first: "$otcm" },
+        distr: { $first: "$distr" },
+        metadata: { $first: "$metadata" },
+        eligibility: { $first: "$eligibility" },
+        originalSingleEnrollGroup: { $first: "$enrollGroups" },
         instructorDataPerSemesterForGroup: {
           $push: {
-            // Only add an entry if there was an actual instructorIds semester entry
             $cond: {
               if: { $ne: ["$enrollGroups.instructorIds.semester", null] },
               then: {
                 semester: "$enrollGroups.instructorIds.semester",
-                instructors: "$instructorsMatchedForEachSemesterEntry"
+                instructors: "$instructorsMatchedForEachSemesterEntry" // Corrected from 'instructor'
               },
-              else: "$$REMOVE" // Remove if this slot was due to preserving a null instructorIds
+              else: "$$REMOVE"
             }
           }
         }
       }
     },
 
-    // Reconstruct each enrollGroup to be an EnrollGroupWithInstructors
     {
       $project: {
-        _id: "$_id.courseId", // Prepare for grouping by courseId
-        courseStaticFields: "$courseStaticFields",
+        _id: "$_id.courseId", // This is the actual course _id
+        // Pass along original course fields
+        sbj: 1, nbr: 1, lvl: 1, smst: 1, ttl: 1, tts: 1,
+        courseLevelGrpIdentifier: 1, dsrpn: 1, otcm: 1, distr: 1, metadata: 1, eligibility: 1,
+        // Reconstruct the enrollGroup
         processedEnrollGroup: {
-          // If originalSingleEnrollGroup is null (i.e., course had no EGs, or this was an empty EG placeholder),
-          // then this whole object will be null. Otherwise, construct the EG.
           $cond: {
-            if: { $eq: ["$_id.enrollGroupGrpIdentifier", null] }, // Check if this group is for a null/empty EG
+            if: { $eq: ["$_id.enrollGroupGrpIdentifier", null] },
             then: null,
             else: {
               $mergeObjects: [
                 "$originalSingleEnrollGroup",
                 { instructors: "$instructorDataPerSemesterForGroup" },
-                { instructorIds: "$$REMOVE" } // Remove the old field
+                { instructorIds: "$$REMOVE" }
               ]
             }
           }
@@ -299,14 +302,25 @@ export const findCoursesWithInstructorsByIds = async (
       }
     },
 
-    // Group back by course ID to collect all processedEnrollGroups
     {
       $group: {
-        _id: "$_id", // Course ID
-        courseRootDoc: { $first: "$courseStaticFields" }, // Original course document fields
+        _id: "$_id", // Group by the actual course _id
+        // Restore original course fields
+        sbj: { $first: "$sbj" },
+        nbr: { $first: "$nbr" },
+        lvl: { $first: "$lvl" },
+        smst: { $first: "$smst" },
+        ttl: { $first: "$ttl" },
+        tts: { $first: "$tts" },
+        grpIdentifier: { $first: "$courseLevelGrpIdentifier" }, // Assign course-level grpId
+        dsrpn: { $first: "$dsrpn" },
+        otcm: { $first: "$otcm" },
+        distr: { $first: "$distr" },
+        metadata: { $first: "$metadata" },
+        eligibility: { $first: "$eligibility" },
+        // Collect the processed enroll groups
         finalEnrollGroups: {
           $push: {
-            // Only push non-null processedEnrollGroup objects
             $cond: {
               if: { $ne: ["$processedEnrollGroup", null] },
               then: "$processedEnrollGroup",
@@ -317,17 +331,23 @@ export const findCoursesWithInstructorsByIds = async (
       }
     },
 
-    // Final step: merge the original course document fields with the new enrollGroups list
+    // Final projection to match CourseWithInstructors structure
     {
-      $replaceRoot: {
-        newRoot: {
-          $mergeObjects: [
-            // Take all fields from the root document (which includes _id, sbj, etc.)
-            // but remove its original enrollGroups and other temporary fields from aggregation pipeline
-            { $replaceVariables: { input: "$courseRootDoc", in: { enrollGroups: "$$REMOVE", instructorsMatchedForEachSemesterEntry: "$$REMOVE" } } },
-            { enrollGroups: "$finalEnrollGroups" } // Add the newly constructed enrollGroups
-          ]
-        }
+      $project: {
+        _id: 1,
+        sbj: 1,
+        nbr: 1,
+        lvl: 1,
+        smst: 1,
+        ttl: 1,
+        tts: 1,
+        grpIdentifier: 1, // This is the course's original grpIdentifier
+        dsrpn: 1,
+        otcm: 1,
+        distr: 1,
+        metadata: 1,
+        eligibility: 1,
+        enrollGroups: "$finalEnrollGroups" // Rename to 'enrollGroups'
       }
     }
   ];
