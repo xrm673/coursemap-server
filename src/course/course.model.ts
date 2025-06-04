@@ -1,6 +1,7 @@
 // src/course/model.ts
 // Data structure and MongoDB interactions
 
+import { Instructor } from '../instructor/instructor.model';
 import { CourseModel } from './course.schema';
 
 export interface Course {
@@ -60,6 +61,9 @@ export interface EnrollGroup {
   // true if the identifier is a topic
   hasTopic: boolean; 
 
+  // topic of the enrollment group (if any)
+  topic?: string; 
+
   // updated for early semesters
   // semesters the enrollment group with the same identifier is offered in
   grpSmst: Array<string>; 
@@ -84,7 +88,7 @@ export interface EnrollGroup {
   // df?: number; 
 
   // updated for early semesters
-  instructors?: Array<{
+  instructorIds?: Array<{
     semester: string;
     netids: Array<string>;
   }>;
@@ -196,12 +200,140 @@ export interface CourseInScheduleForRequirement extends CourseInSchedule {
   tts: string; // Schedule field: title (short)
 }
 
+export interface EnrollGroupWithInstructors extends EnrollGroup {
+  instructors: Array<{
+    semester: string;
+    instructors: Array<Instructor>;
+  }>;
+}
+
+export interface CourseWithInstructors extends Course {
+  enrollGroups: Array<EnrollGroupWithInstructors>;
+}
+
 export const findById = async (_id: string): Promise<Course | null> => {
   return await CourseModel.findOne({ _id }).lean();
 };
 
 export const findByIds = async (_ids: string[]): Promise<Course[]> => {
   return await CourseModel.find({ _id: { $in: _ids } }).lean();
+};
+
+export const findCoursesWithInstructorsByIds = async (
+  _ids: string[]
+): Promise<CourseWithInstructors[]> => {
+  if (!_ids || _ids.length === 0) {
+    return [];
+  }
+
+  const pipeline: any[] = [
+    { $match: { _id: { $in: _ids } } },
+
+    // Unwind enrollGroups, keeping courses that might have empty/null enrollGroups
+    { $unwind: { path: "$enrollGroups", preserveNullAndEmptyArrays: true } },
+
+    // Unwind instructorIds within enrollGroups, keeping EGs that might have empty/null instructorIds
+    // If $enrollGroups is null from the previous unwind, $enrollGroups.instructorIds will also be null.
+    { $unwind: { path: "$enrollGroups.instructorIds", preserveNullAndEmptyArrays: true } },
+
+    // Lookup instructors for the netids.
+    {
+      $lookup: {
+        from: "instructors", // Collection name for InstructorModel
+        let: { netidsToSearch: { $ifNull: ["$enrollGroups.instructorIds.netids", []] } },
+        pipeline: [
+          { $match: { $expr: { $in: ["$netid", "$$netidsToSearch"] } } },
+          // Optional: Add a $project stage here if Instructor schema in DB has extra fields not in Instructor interface
+        ],
+        as: "instructorsMatchedForEachSemesterEntry"
+      }
+    },
+
+    // Group by course and enrollGroup to reconstruct instructor list per semester for each EG
+    {
+      $group: {
+        _id: {
+          courseId: "$_id",
+          // If enrollGroups was null (course had no EGs), grpIdentifier will be null.
+          enrollGroupGrpIdentifier: "$enrollGroups.grpIdentifier"
+        },
+        courseStaticFields: { $first: "$$ROOT" }, // Keep all original fields of the course for later use
+        originalSingleEnrollGroup: { $first: "$enrollGroups" }, // The specific EG being processed (or null)
+        // Create the list of {semester, instructor[]} for the current enrollGroup
+        instructorDataPerSemesterForGroup: {
+          $push: {
+            // Only add an entry if there was an actual instructorIds semester entry
+            $cond: {
+              if: { $ne: ["$enrollGroups.instructorIds.semester", null] },
+              then: {
+                semester: "$enrollGroups.instructorIds.semester",
+                instructors: "$instructorsMatchedForEachSemesterEntry"
+              },
+              else: "$$REMOVE" // Remove if this slot was due to preserving a null instructorIds
+            }
+          }
+        }
+      }
+    },
+
+    // Reconstruct each enrollGroup to be an EnrollGroupWithInstructors
+    {
+      $project: {
+        _id: "$_id.courseId", // Prepare for grouping by courseId
+        courseStaticFields: "$courseStaticFields",
+        processedEnrollGroup: {
+          // If originalSingleEnrollGroup is null (i.e., course had no EGs, or this was an empty EG placeholder),
+          // then this whole object will be null. Otherwise, construct the EG.
+          $cond: {
+            if: { $eq: ["$_id.enrollGroupGrpIdentifier", null] }, // Check if this group is for a null/empty EG
+            then: null,
+            else: {
+              $mergeObjects: [
+                "$originalSingleEnrollGroup",
+                { instructors: "$instructorDataPerSemesterForGroup" },
+                { instructorIds: "$$REMOVE" } // Remove the old field
+              ]
+            }
+          }
+        }
+      }
+    },
+
+    // Group back by course ID to collect all processedEnrollGroups
+    {
+      $group: {
+        _id: "$_id", // Course ID
+        courseRootDoc: { $first: "$courseStaticFields" }, // Original course document fields
+        finalEnrollGroups: {
+          $push: {
+            // Only push non-null processedEnrollGroup objects
+            $cond: {
+              if: { $ne: ["$processedEnrollGroup", null] },
+              then: "$processedEnrollGroup",
+              else: "$$REMOVE"
+            }
+          }
+        }
+      }
+    },
+
+    // Final step: merge the original course document fields with the new enrollGroups list
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: [
+            // Take all fields from the root document (which includes _id, sbj, etc.)
+            // but remove its original enrollGroups and other temporary fields from aggregation pipeline
+            { $replaceVariables: { input: "$courseRootDoc", in: { enrollGroups: "$$REMOVE", instructorsMatchedForEachSemesterEntry: "$$REMOVE" } } },
+            { enrollGroups: "$finalEnrollGroups" } // Add the newly constructed enrollGroups
+          ]
+        }
+      }
+    }
+  ];
+
+  const result = await CourseModel.aggregate(pipeline).exec();
+  return result as CourseWithInstructors[];
 };
 
 /*

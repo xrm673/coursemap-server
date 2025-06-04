@@ -3,7 +3,7 @@
 
 import { plannedSemesters, takenSemesters } from '../utils/constants';
 import * as CourseModel from './course.model';
-import { Course, NoDataCourse, CourseInSchedule } from './course.model';
+import { Course, NoDataCourse, CourseInSchedule, CourseWithInstructors } from './course.model';
 
 
 export const getCourse = async (courseId: string, ttl?: string): Promise<Course | NoDataCourse> => {
@@ -42,6 +42,10 @@ export const getCoursesByIds = async (courseIds: string[]): Promise<(Course | No
     }
   }
   return results;
+};
+
+export const getCoursesWithInstructorsByIds = async (courseIds: string[]): Promise<CourseWithInstructors[]> => {
+  return await CourseModel.findCoursesWithInstructorsByIds(courseIds);
 };
 
 export const isTaken = (course: CourseInSchedule): boolean => {

@@ -23,12 +23,13 @@ const SectionSchema = new Schema<Section>({
 const EnrollGroupSchema = new Schema<EnrollGroup>({
   grpIdentifier: { type: String, required: true },
   hasTopic: { type: Boolean, required: true },
+  topic: String,
   grpSmst: [String],
   credits: [Number],
   grading: { type: String, required: true },
   components: [String],
   componentsOptional: [String],
-  instructors: [{
+  instructorIds: [{
     semester: String,
     netids: [String]
   }],
