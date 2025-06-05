@@ -136,7 +136,6 @@ export const addCourseToSchedule = async (req: Request, res: Response): Promise<
         }
 
         const courseData = req.body;
-        console.log(courseData);
         
         // Validate required fields
         if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {

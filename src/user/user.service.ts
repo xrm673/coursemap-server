@@ -118,7 +118,6 @@ export const addCourseToSchedule = async (userId: string, courseData: CourseInSc
         if (!user) {
             throw new UserError('User not found');
         }
-        console.log("courseData", courseData);
 
         if (!user.scheduleData) {
             user.scheduleData = [];
@@ -149,7 +148,6 @@ export const addCourseToSchedule = async (userId: string, courseData: CourseInSc
         if (courseData.sections) {
             newCourse.sections = courseData.sections;
         }
-        console.log("newCourse", newCourse);
 
         user.scheduleData.push(newCourse);
         await user.save();

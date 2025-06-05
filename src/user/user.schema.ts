@@ -15,6 +15,7 @@ const UserMajorSchema = new Schema<UserMajor>({
 
 const CourseInScheduleSchema = new Schema<CourseInSchedule>({
   _id: { type: String, required: true },
+  tts: { type: String, required: true },
   grpIdentifier: String,
   usedInRequirements: { type: [String], required: true },
   credit: { type: Number, required: true },
