@@ -10,8 +10,6 @@ export interface Requirement {
     type: string;
     majorId: string;
     name: string;
-    tag: string;
-    tagDescr: string;
     descr: string[];
     numberOfRequiredCourses?: number; // total number of courses required
     // an array of course ids (for elective requirements)

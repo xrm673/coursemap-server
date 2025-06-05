@@ -20,8 +20,6 @@ const RequirementSchema = new Schema<Requirement>({
   type: { type: String, required: true },
   majorId: { type: String, required: true },
   name: { type: String, required: true },
-  tag: { type: String, required: true },
-  tagDescr: { type: String, required: true },
   descr: [String],
   numberOfRequiredCourses: Number,
   courseIds: [String],

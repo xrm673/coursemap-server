@@ -30,13 +30,19 @@ export const processRequirements = async (
     requirements: ProcessedRequirement[],
     userCourses: CourseInSchedule[]
 }> => {
+    console.log('Processing requirements:', requirementIds);
+    console.log('Initial user courses:', userCourses?.length || 0);
+    
     const processedRequirements: ProcessedRequirement[] = [];
     let updatedUserCourses = userCourses || [];
 
     // Fetch all requirements in one query
     const requirements = await RequirementModel.findByIds(requirementIds);
+    console.log('Found requirements:', requirements.map(r => r.name));
 
     for (const reqDetails of requirements) {
+        console.log(`Processing requirement: ${reqDetails.name} (${reqDetails.type})`);
+        
         // If no userCourses, create basic processed requirement
         if (!userCourses) {
             processedRequirements.push({
@@ -44,8 +50,6 @@ export const processRequirements = async (
                 type: reqDetails.type,
                 majorId: reqDetails.majorId,
                 name: reqDetails.name,
-                tag: reqDetails.tag,
-                tagDescr: reqDetails.tagDescr,
                 descr: reqDetails.descr,
                 numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
                 courseIds: reqDetails.courseIds,
@@ -63,14 +67,31 @@ export const processRequirements = async (
         // Process based on requirement type
         if (reqDetails.type === "E") {
             const { processedRequirement, userCourses: newUserCourses } = await processElective(reqDetails, updatedUserCourses);
+            console.log(`Processed elective requirement ${reqDetails.name}:`, {
+                taken: processedRequirement.taken.length,
+                planned: processedRequirement.planned.length,
+                notUsed: processedRequirement.notUsed.length
+            });
             processedRequirements.push(processedRequirement);
             updatedUserCourses = newUserCourses;
         } else if (reqDetails.type === "C") {
             const { processedRequirement, userCourses: newUserCourses } = await processCore(reqDetails, updatedUserCourses);
+            console.log(`Processed core requirement ${reqDetails.name}:`, {
+                taken: processedRequirement.taken.length,
+                planned: processedRequirement.planned.length,
+                notUsed: processedRequirement.notUsed.length
+            });
             processedRequirements.push(processedRequirement);
             updatedUserCourses = newUserCourses;
         }
     }
+
+    console.log('Final processed requirements:', processedRequirements.map(r => ({
+        name: r.name,
+        taken: r.taken.length,
+        planned: r.planned.length,
+        notUsed: r.notUsed.length
+    })));
 
     return {
         requirements: processedRequirements,
@@ -89,13 +110,15 @@ export const processElective = async (
     processedRequirement: ProcessedRequirement,
     userCourses: CourseInSchedule[],
 }> => {
+    console.log(`\nProcessing elective requirement: ${reqDetails.name}`);
+    console.log('Available course IDs:', reqDetails.courseIds);
+    console.log('Total user courses:', userCourses.length);
+
     const processedRequirement: ProcessedRequirement = {
         _id: reqDetails._id,
         type: reqDetails.type,
         majorId: reqDetails.majorId,
         name: reqDetails.name,
-        tag: reqDetails.tag,
-        tagDescr: reqDetails.tagDescr,
         descr: reqDetails.descr,
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
@@ -114,6 +137,7 @@ export const processElective = async (
     const notUsed: CourseInSchedule[] = [];
 
     if (!reqDetails.courseIds) {
+        console.log('No course IDs found for this requirement');
         return { processedRequirement, userCourses: updatedUserCourses };
     }
 
@@ -121,39 +145,62 @@ export const processElective = async (
     const matchingUserCourses = updatedUserCourses.filter(userCourse => 
         isMatchingCourse(reqDetails, userCourse)
     );
+    console.log('Found matching courses:', matchingUserCourses.map(c => ({
+        id: c._id,
+        grpIdentifier: c.grpIdentifier,
+        usedIn: c.usedInRequirements
+    })));
 
     // Process the matching courses
     for (const matchingCourse of matchingUserCourses) {
+        console.log(`\nProcessing matching course ${matchingCourse._id}:`);
+        console.log('- Current usedInRequirements:', matchingCourse.usedInRequirements);
+        console.log('- Current requirement ID:', reqDetails._id);
+        
         if (matchingCourse.usedInRequirements.includes(reqDetails._id)) {
             // Course already used in this requirement
+            console.log('Course already used in this requirement');
             if (isTaken(matchingCourse)) {
+                console.log('-> Adding to taken');
                 taken.push(matchingCourse);
             } else {
+                console.log('-> Adding to planned');
                 planned.push(matchingCourse);
             }
         } else if (reqDetails.overlap?.some(reqId => 
             matchingCourse.usedInRequirements.includes(reqId)
         )) {
             // Course used in an overlapping requirement
+            console.log('Course used in an overlapping requirement');
+            console.log('-> Adding to notUsed');
             notUsed.push(matchingCourse);
         } else {
             // Course not used yet
+            console.log('Course not used yet, adding to this requirement');
             matchingCourse.usedInRequirements.push(reqDetails._id);
             if (isTaken(matchingCourse)) {
+                console.log('-> Adding to taken');
                 taken.push(matchingCourse);
             } else {
+                console.log('-> Adding to planned');
                 planned.push(matchingCourse);
             }
         }
     }
 
-    // Fetch full course data for all courses
     processedRequirement.taken = taken;
     processedRequirement.planned = planned;
     processedRequirement.notUsed = notUsed;
 
     processedRequirement.completed = 
         processedRequirement.taken.length >= (reqDetails.numberOfRequiredCourses || 0);
+
+    console.log('\nFinal counts for requirement:', reqDetails.name);
+    console.log('- Taken:', taken.length);
+    console.log('- Planned:', planned.length);
+    console.log('- Not Used:', notUsed.length);
+    console.log('- Completed:', processedRequirement.completed);
+    console.log('- Required courses:', reqDetails.numberOfRequiredCourses);
 
     return { processedRequirement, userCourses: updatedUserCourses };
 };
@@ -174,8 +221,6 @@ export const processCore = async (
         type: reqDetails.type,
         majorId: reqDetails.majorId,
         name: reqDetails.name,
-        tag: reqDetails.tag,
-        tagDescr: reqDetails.tagDescr,
         descr: reqDetails.descr,
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
@@ -243,26 +288,34 @@ export const processCore = async (
 };
 
 function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule): boolean {
+    console.log(`\nChecking if course ${userCourse._id} matches requirement ${reqDetails.name}`);
+    console.log('Course grpIdentifier:', userCourse.grpIdentifier);
+    
     // First check if the course ID matches any in courseIds
     if (reqDetails.courseIds && reqDetails.courseIds.includes(userCourse._id)) {
+        console.log('Course ID found in requirement courseIds');
+        
         // If the userCourse doesn't have a grpIdentifier, it's a match
         if (!userCourse.grpIdentifier) {
+            console.log('No grpIdentifier needed, course matches');
+            return true;
+        } else {
+            if (reqDetails.courseNotes) {
+                console.log('Checking course notes for grpIdentifier match');
+                const courseNote = reqDetails.courseNotes.find(courseNote => 
+                    courseNote.courseId === userCourse._id
+                )
+                if (courseNote && courseNote.grpIdentifierArray) {
+                    const matches = courseNote.grpIdentifierArray.includes(userCourse.grpIdentifier);
+                    console.log('Found course note with grpIdentifierArray:', courseNote.grpIdentifierArray);
+                    console.log('Matches:', matches);
+                    return matches;
+                } 
+            }
+            console.log('No specific grpIdentifier restrictions, course matches');
             return true;
         }
     }
-
-    // Then check if it matches any course in courseWithGrpTopic
-    if (reqDetails.courseNotes) {
-        const matchingCourseWithGrp = reqDetails.courseNotes.find(courseNote => 
-            courseNote.courseId === userCourse._id && 
-            courseNote.grpIdentifierArray && userCourse.grpIdentifier &&
-            courseNote.grpIdentifierArray.includes(userCourse.grpIdentifier)
-        );
-        if (matchingCourseWithGrp) {
-            return true;
-        }
-    }
-
-    // If no matches found, return false
+    console.log('Course ID not found in requirement courseIds');
     return false;
 }

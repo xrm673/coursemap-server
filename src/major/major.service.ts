@@ -162,7 +162,12 @@ export const getConcentrationRequirements = async (
     }
 
     const userConcentrations = getUserConcentrations(user, major);
-    let userCourses: CourseInSchedule[] = [];
+    console.log('Processing concentrations for user:', userConcentrations);
+    
+    // Initialize userCourses with the user's actual courses
+    let userCourses: CourseInSchedule[] = getUserCourses(user);
+    console.log('Initial user courses:', userCourses.length);
+    
     const concentrationRequirements: Array<{
         concentration: string;
         requirements: ProcessedRequirement[];
@@ -172,11 +177,23 @@ export const getConcentrationRequirements = async (
         const concentrationReqs = major.concentrations?.find(
             req => req.concentrationName === concentration
         );
+        console.log(`Found concentration requirements for ${concentration}:`, concentrationReqs?.requirements);
+        
         if (concentrationReqs) {
+            console.log(`Processing requirements for concentration ${concentration}...`);
             const {
                 requirements: processedReqs,
                 userCourses: newUserCourses
             } = await processRequirements(concentrationReqs.requirements, userCourses);
+            
+            console.log(`Processed requirements for ${concentration}:`, 
+                processedReqs.map(req => ({
+                    name: req.name,
+                    taken: req.taken.length,
+                    planned: req.planned.length,
+                    notUsed: req.notUsed.length
+                }))
+            );
             
             concentrationRequirements.push({
                 concentration,
