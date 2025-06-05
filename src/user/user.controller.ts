@@ -138,8 +138,8 @@ export const addCourseToSchedule = async (req: Request, res: Response): Promise<
         const courseData = req.body;
         
         // Validate required fields
-        if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
-            res.status(400).json({ error: 'Missing required fields: id, semester, credit, and usedInRequirements are required' });
+        if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements || !courseData.tts) {
+            res.status(400).json({ error: 'Missing required fields: id, semester, credit, tts, and usedInRequirements are required' });
             return;
         }
 
