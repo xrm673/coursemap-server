@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { Instructor } from './instructor.model';
 
-const InstructorSchema = new Schema<Instructor>({
+export const InstructorSchema = new Schema<Instructor>({
     _id: { type: String, required: true, unique: true },
     netid: { type: String, required: true },
     lNm: { type: String, required: true },

@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { Course, EnrollGroup, Meeting, Section } from './course.model';
+import { InstructorSchema } from '../instructor/instructor.schema';
 
 const MeetingSchema = new Schema<Meeting>({
     stTm: String,
@@ -29,9 +30,9 @@ const EnrollGroupSchema = new Schema<EnrollGroup>({
   grading: { type: String, required: true },
   components: [String],
   componentsOptional: [String],
-  instructorIds: [{
+  instructorHistory: [{
     semester: String,
-    netids: [String]
+    instructors: [InstructorSchema]
   }],
   locationConflicts: Boolean,
   consent: String,

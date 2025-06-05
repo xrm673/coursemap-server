@@ -12,7 +12,7 @@ export interface Course {
   smst: Array<string>; // semester offered
   ttl: string; // title (long)
   tts: string; // title (short)
-  grpIdentifier?: string; // only specified when the course has topic and has one enrol group
+  courseHasTopic?: boolean; // true if the course has topic
   dsrpn: string; // description
   otcm?: Array<string>; // outcomes of the course
   distr?: Array<string>; // distribution categories
@@ -88,9 +88,9 @@ export interface EnrollGroup {
   // df?: number; 
 
   // updated for early semesters
-  instructorIds?: Array<{
+  instructorHistory?: Array<{
     semester: string;
-    netids: Array<string>;
+    instructors: Array<Instructor>;
   }>;
 
   // true if it has a section that is offered long time out of Ithaca
@@ -200,160 +200,12 @@ export interface CourseInScheduleForRequirement extends CourseInSchedule {
   tts: string; // Schedule field: title (short)
 }
 
-export interface EnrollGroupWithInstructors extends EnrollGroup {
-  instructors: Array<{
-    semester: string;
-    instructors: Array<Instructor>;
-  }>;
-}
-
-export interface CourseWithInstructors extends Course {
-  enrollGroups: Array<EnrollGroupWithInstructors>;
-}
-
 export const findById = async (_id: string): Promise<Course | null> => {
   return await CourseModel.findOne({ _id }).lean();
 };
 
 export const findByIds = async (_ids: string[]): Promise<Course[]> => {
   return await CourseModel.find({ _id: { $in: _ids } }).lean();
-};
-
-export const findCoursesWithInstructorsByIds = async (
-  _ids: string[]
-): Promise<CourseWithInstructors[]> => {
-  if (!_ids || _ids.length === 0) {
-    return [];
-  }
-
-  const pipeline: any[] = [
-    { $match: { _id: { $in: _ids } } },
-
-    { $unwind: { path: "$enrollGroups", preserveNullAndEmptyArrays: true } },
-    { $unwind: { path: "$enrollGroups.instructorIds", preserveNullAndEmptyArrays: true } },
-
-    {
-      $lookup: {
-        from: "instructors",
-        let: { netidsToSearch: { $ifNull: ["$enrollGroups.instructorIds.netids", []] } },
-        pipeline: [
-          { $match: { $expr: { $in: ["$netid", "$$netidsToSearch"] } } },
-        ],
-        as: "instructorsMatchedForEachSemesterEntry"
-      }
-    },
-
-    {
-      $group: {
-        _id: {
-          courseId: "$_id",
-          enrollGroupGrpIdentifier: "$enrollGroups.grpIdentifier"
-        },
-        // Explicitly carry forward original top-level course fields
-        // These fields are present on the document after unwinding
-        sbj: { $first: "$sbj" },
-        nbr: { $first: "$nbr" },
-        lvl: { $first: "$lvl" },
-        smst: { $first: "$smst" },
-        ttl: { $first: "$ttl" },
-        tts: { $first: "$tts" },
-        courseLevelGrpIdentifier: { $first: "$grpIdentifier" }, // Course's own grpIdentifier
-        dsrpn: { $first: "$dsrpn" },
-        otcm: { $first: "$otcm" },
-        distr: { $first: "$distr" },
-        metadata: { $first: "$metadata" },
-        eligibility: { $first: "$eligibility" },
-        originalSingleEnrollGroup: { $first: "$enrollGroups" },
-        instructorDataPerSemesterForGroup: {
-          $push: {
-            $cond: {
-              if: { $ne: ["$enrollGroups.instructorIds.semester", null] },
-              then: {
-                semester: "$enrollGroups.instructorIds.semester",
-                instructors: "$instructorsMatchedForEachSemesterEntry" // Corrected from 'instructor'
-              },
-              else: "$$REMOVE"
-            }
-          }
-        }
-      }
-    },
-
-    {
-      $project: {
-        _id: "$_id.courseId", // This is the actual course _id
-        // Pass along original course fields
-        sbj: 1, nbr: 1, lvl: 1, smst: 1, ttl: 1, tts: 1,
-        courseLevelGrpIdentifier: 1, dsrpn: 1, otcm: 1, distr: 1, metadata: 1, eligibility: 1,
-        // Reconstruct the enrollGroup
-        processedEnrollGroup: {
-          $cond: {
-            if: { $eq: ["$_id.enrollGroupGrpIdentifier", null] },
-            then: null,
-            else: {
-              $mergeObjects: [
-                "$originalSingleEnrollGroup",
-                { instructors: "$instructorDataPerSemesterForGroup" },
-                { instructorIds: "$$REMOVE" }
-              ]
-            }
-          }
-        }
-      }
-    },
-
-    {
-      $group: {
-        _id: "$_id", // Group by the actual course _id
-        // Restore original course fields
-        sbj: { $first: "$sbj" },
-        nbr: { $first: "$nbr" },
-        lvl: { $first: "$lvl" },
-        smst: { $first: "$smst" },
-        ttl: { $first: "$ttl" },
-        tts: { $first: "$tts" },
-        grpIdentifier: { $first: "$courseLevelGrpIdentifier" }, // Assign course-level grpId
-        dsrpn: { $first: "$dsrpn" },
-        otcm: { $first: "$otcm" },
-        distr: { $first: "$distr" },
-        metadata: { $first: "$metadata" },
-        eligibility: { $first: "$eligibility" },
-        // Collect the processed enroll groups
-        finalEnrollGroups: {
-          $push: {
-            $cond: {
-              if: { $ne: ["$processedEnrollGroup", null] },
-              then: "$processedEnrollGroup",
-              else: "$$REMOVE"
-            }
-          }
-        }
-      }
-    },
-
-    // Final projection to match CourseWithInstructors structure
-    {
-      $project: {
-        _id: 1,
-        sbj: 1,
-        nbr: 1,
-        lvl: 1,
-        smst: 1,
-        ttl: 1,
-        tts: 1,
-        grpIdentifier: 1, // This is the course's original grpIdentifier
-        dsrpn: 1,
-        otcm: 1,
-        distr: 1,
-        metadata: 1,
-        eligibility: 1,
-        enrollGroups: "$finalEnrollGroups" // Rename to 'enrollGroups'
-      }
-    }
-  ];
-
-  const result = await CourseModel.aggregate(pipeline).exec();
-  return result as CourseWithInstructors[];
 };
 
 /*

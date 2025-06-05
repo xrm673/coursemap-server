@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { CourseGroup, CourseWithGrpTopic, Requirement } from './requirement.model';
+import { CourseGroup, CourseNote, Requirement } from './requirement.model';
 
 const CourseGroupSchema = new Schema<CourseGroup>({
   _id: { type: Number, required: true, unique: true },
@@ -8,9 +8,11 @@ const CourseGroupSchema = new Schema<CourseGroup>({
   notes: String
 });
 
-const CourseWithGrpTopicSchema = new Schema<CourseWithGrpTopic>({
+const CourseNoteSchema = new Schema<CourseNote>({
   courseId: { type: String, required: true },
-  grpIdentifier: { type: String, required: true }
+  grpIdentifierArray: [String],
+  noteForRequirement: String,
+  recommendedByDepartment: Boolean
 }, { _id: false });
 
 const RequirementSchema = new Schema<Requirement>({
@@ -23,7 +25,7 @@ const RequirementSchema = new Schema<Requirement>({
   descr: [String],
   numberOfRequiredCourses: Number,
   courseIds: [String],
-  courseWithGrpTopics: [CourseWithGrpTopicSchema],
+  courseNotes: [CourseNoteSchema],
   courseGrps: [CourseGroupSchema],
   overlap: [String]
 });

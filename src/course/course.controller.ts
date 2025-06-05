@@ -30,14 +30,3 @@ export const getCoursesByIds = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: 'Internal server error while fetching courses' });
   }
 };
-
-export const getCoursesWithInstructorsByIds = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { courseIds } = req.body;
-    const courses = await CourseService.getCoursesWithInstructorsByIds(courseIds as string[]);
-    res.status(200).json(courses);
-  } catch (error) {
-    console.error('Error fetching courses with instructors by IDs:', error);
-    res.status(500).json({ error: 'Internal server error while fetching courses with instructors' });
-  }
-};

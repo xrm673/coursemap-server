@@ -16,7 +16,7 @@ export interface Requirement {
     numberOfRequiredCourses?: number; // total number of courses required
     // an array of course ids (for elective requirements)
     courseIds?: Array<string>
-    courseWithGrpTopics?: Array<CourseWithGrpTopic>;
+    courseNotes?: Array<CourseNote>;
     // an array of course groups (for core requirements)
     courseGrps?: Array<CourseGroup>;
     overlap?: Array<string>; // overlap requirement ids
@@ -29,9 +29,11 @@ export interface CourseGroup {
     notes?: string;
 }
 
-export interface CourseWithGrpTopic {
+export interface CourseNote {
     courseId: string;
-    grpIdentifier: string;
+    grpIdentifierArray?: string[];
+    noteForRequirement?: string;
+    recommendedByDepartment?: boolean;
 }
 
 // processed requirement

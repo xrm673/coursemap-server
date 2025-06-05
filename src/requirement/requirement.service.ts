@@ -49,7 +49,7 @@ export const processRequirements = async (
                 descr: reqDetails.descr,
                 numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
                 courseIds: reqDetails.courseIds,
-                courseWithGrpTopics: reqDetails.courseWithGrpTopics,
+                courseNotes: reqDetails.courseNotes,
                 courseGrps: reqDetails.courseGrps,
                 overlap: reqDetails.overlap,
                 completed: false,
@@ -99,7 +99,7 @@ export const processElective = async (
         descr: reqDetails.descr,
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
-        courseWithGrpTopics: reqDetails.courseWithGrpTopics,
+        courseNotes: reqDetails.courseNotes,
         courseGrps: reqDetails.courseGrps,
         overlap: reqDetails.overlap,
         completed: false,
@@ -179,7 +179,7 @@ export const processCore = async (
         descr: reqDetails.descr,
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
-        courseWithGrpTopics: reqDetails.courseWithGrpTopics,
+        courseNotes: reqDetails.courseNotes,
         courseGrps: reqDetails.courseGrps,
         overlap: reqDetails.overlap,
         completed: false,
@@ -252,10 +252,11 @@ function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule)
     }
 
     // Then check if it matches any course in courseWithGrpTopic
-    if (reqDetails.courseWithGrpTopics) {
-        const matchingCourseWithGrp = reqDetails.courseWithGrpTopics.find(course => 
-            course.courseId === userCourse._id && 
-            course.grpIdentifier === userCourse.grpIdentifier
+    if (reqDetails.courseNotes) {
+        const matchingCourseWithGrp = reqDetails.courseNotes.find(courseNote => 
+            courseNote.courseId === userCourse._id && 
+            courseNote.grpIdentifierArray && userCourse.grpIdentifier &&
+            courseNote.grpIdentifierArray.includes(userCourse.grpIdentifier)
         );
         if (matchingCourseWithGrp) {
             return true;

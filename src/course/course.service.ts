@@ -3,7 +3,7 @@
 
 import { plannedSemesters, takenSemesters } from '../utils/constants';
 import * as CourseModel from './course.model';
-import { Course, NoDataCourse, CourseInSchedule, CourseWithInstructors } from './course.model';
+import { Course, NoDataCourse, CourseInSchedule } from './course.model';
 
 
 export const getCourse = async (courseId: string, ttl?: string): Promise<Course | NoDataCourse> => {
@@ -22,30 +22,9 @@ export const getCourse = async (courseId: string, ttl?: string): Promise<Course 
   return course;
 };
 
-export const getCoursesByIds = async (courseIds: string[]): Promise<(Course | NoDataCourse)[]> => {
+export const getCoursesByIds = async (courseIds: string[]): Promise<Course[]> => {
   const courses = await CourseModel.findByIds(courseIds);
-  const results: (Course | NoDataCourse)[] = [];
-
-  for (const id of courseIds) {
-    const foundCourse = courses.find(c => c._id === id);
-    if (foundCourse) {
-      results.push(foundCourse);
-    } else {
-      const subject = id.match(/^[A-Za-z]+/)?.[0] || '';
-      results.push({
-        _id: id,
-        sbj: subject,
-        nbr: id.slice(subject.length),
-        ttl: 'No data',
-        noData: true,
-      });
-    }
-  }
-  return results;
-};
-
-export const getCoursesWithInstructorsByIds = async (courseIds: string[]): Promise<CourseWithInstructors[]> => {
-  return await CourseModel.findCoursesWithInstructorsByIds(courseIds);
+  return courses;
 };
 
 export const isTaken = (course: CourseInSchedule): boolean => {
