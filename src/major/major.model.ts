@@ -60,3 +60,13 @@ export interface RawEndRequirement {
 export const findById = async (_id: string): Promise<Major | null> => {
     return await MajorModel.findOne({ _id });
 };
+
+/*
+    Find all majors, optionally filtered by collegeId
+*/
+export const find = async (collegeId?: string): Promise<Major[]> => {
+    if (collegeId) {
+        return await MajorModel.find({ 'colleges.collegeId': collegeId }).lean();
+    }
+    return await MajorModel.find().lean();
+};

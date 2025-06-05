@@ -7,6 +7,7 @@ import { optionalAuthenticate } from '../utils/middleware/auth.middleware';
 
 const majorRouter = Router();
 
+majorRouter.get('/', MajorController.getAllMajors);
 majorRouter.get('/:majorId', MajorController.getMajorById);
 majorRouter.get('/:majorId/requirements', optionalAuthenticate, MajorController.getMajorWithRequirements);
 

@@ -8,7 +8,11 @@ import { UserModel } from '../user/user.schema';
 import { User } from '../user/user.model';
 import { LoginCredentials, SignupData, AuthResponse } from './auth.types';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
+
 const SALT_ROUNDS = 10;
 const TOKEN_EXPIRY = '24h';
 
@@ -38,26 +42,44 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
 };
 
 export const signup = async (signupData: SignupData): Promise<AuthResponse> => {
-  const existingUser = await UserModel.findOne({ email: signupData.email });
-  if (existingUser) throw new AuthError('User with this email already exists');
+  try {
+    const existingUser = await UserModel.findOne({ email: signupData.email });
+    if (existingUser) throw new AuthError('User with this email already exists');
 
-  const passwordHash = await bcrypt.hash(signupData.password, SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(signupData.password, SALT_ROUNDS);
 
-  const user = new UserModel({
-    ...signupData,
-    passwordHash,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  });
+    const user = new UserModel({
+      ...signupData,
+      passwordHash,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
-  await user.save();
-  const token = generateToken(user);
+    await user.save();
+    const token = generateToken(user);
 
-  // Remove passwordHash from returned user object
-  const userObj = user.toObject();
-  userObj.passwordHash = undefined;
+    // Remove passwordHash from returned user object
+    const userObj = user.toObject();
+    userObj.passwordHash = undefined;
 
-  return { token, user: userObj };
+    return { token, user: userObj };
+  } catch (error) {
+    // Check for MongoDB duplicate key error
+    if (
+      typeof error === 'object' && 
+      error !== null && 
+      'code' in error && 
+      error.code === 11000 && 
+      'keyPattern' in error &&
+      typeof error.keyPattern === 'object' &&
+      error.keyPattern !== null &&
+      'email' in error.keyPattern &&
+      error.keyPattern.email === 1
+    ) {
+      throw new AuthError('User with this email already exists');
+    }
+    throw error;
+  }
 };
 
 export const login = async (email: string, password: string): Promise<AuthResponse> => {

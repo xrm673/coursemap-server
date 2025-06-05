@@ -4,6 +4,20 @@
 import { Request, Response } from 'express';
 import * as MajorService from './major.service';
 
+
+export const getAllMajors = async (
+    req: Request, res: Response
+): Promise<void> => {
+    try {
+        const { collegeId } = req.query;
+        const majors = await MajorService.getAllMajors(collegeId as string | undefined);
+        res.status(200).json(majors);
+    } catch (error) {
+        console.error('Error getting majors:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 export const getMajorById = async (
     req: Request, res: Response
 ): Promise<void> => {

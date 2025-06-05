@@ -9,6 +9,14 @@ import { ProcessedRequirement } from '../requirement/requirement.model';
 import { LATEST_YEAR } from '../utils/constants';
 import { processRequirements } from '../requirement/requirement.service';
 import { getUser, getUserConcentrations, getUserCourses, checkIsUserMajor } from '../user/user.service';
+import { MajorModel as MajorMongoModel } from './major.schema';
+
+/*
+    Get all majors, optionally filtered by collegeId
+*/
+export const getAllMajors = async (collegeId?: string): Promise<Major[]> => {
+    return await MajorModel.find(collegeId);
+};
 
 /*
     Get a major by its id
