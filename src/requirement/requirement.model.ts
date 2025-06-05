@@ -2,7 +2,7 @@
 // Data structure and MongoDB interactions
 
 import { RequirementModel } from './requirement.schema';
-import { FetchedCourseInSchedule } from '../course/course.model';
+import { CourseInSchedule } from '../course/course.model';
 
 // stored in the database
 export interface Requirement {
@@ -39,9 +39,9 @@ export interface CourseNote {
 // processed requirement
 export interface ProcessedRequirement extends Requirement {
     completed: boolean;
-    takenCourses: FetchedCourseInSchedule[];
-    plannedCourses: FetchedCourseInSchedule[];
-    eligibleButNotUsedCourses: FetchedCourseInSchedule[];
+    taken: CourseInSchedule[];
+    planned: CourseInSchedule[];
+    notUsed: CourseInSchedule[];
 }
 
 export const findById = async (id: string): Promise<Requirement | null> => {

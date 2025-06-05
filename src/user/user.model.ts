@@ -1,7 +1,7 @@
 // src/user/user.model.ts
 // Data structure and MongoDB interactions
 
-import mongoose, { Schema, Types, Document } from 'mongoose';
+import { Document } from 'mongoose';
 import { CourseFavored, CourseInSchedule } from '../course/course.model';
 import { UserModel } from './user.schema';
 

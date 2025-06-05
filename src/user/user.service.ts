@@ -135,6 +135,7 @@ export const addCourseToSchedule = async (userId: string, courseData: CourseInSc
 
         const newCourse: CourseInSchedule = {
             _id: courseData._id,
+            tts: courseData.tts,
             semester: courseData.semester,
             credit: courseData.credit,
             usedInRequirements: courseData.usedInRequirements

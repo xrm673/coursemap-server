@@ -3,7 +3,7 @@
 
 import * as RequirementModel from './requirement.model';
 import { Requirement, ProcessedRequirement } from './requirement.model';
-import { CourseInSchedule, fetchCoursesInSchedule } from '../course/course.model';
+import { CourseInSchedule } from '../course/course.model';
 import { isTaken } from '../course/course.service';
 
 
@@ -53,9 +53,9 @@ export const processRequirements = async (
                 courseGrps: reqDetails.courseGrps,
                 overlap: reqDetails.overlap,
                 completed: false,
-                takenCourses: [],
-                plannedCourses: [],
-                eligibleButNotUsedCourses: [],
+                taken: [],
+                planned: [],
+                notUsed: [],
             });
             continue;
         }
@@ -103,15 +103,15 @@ export const processElective = async (
         courseGrps: reqDetails.courseGrps,
         overlap: reqDetails.overlap,
         completed: false,
-        takenCourses: [],
-        plannedCourses: [],
-        eligibleButNotUsedCourses: []
+        taken: [],
+        planned: [],
+        notUsed: []
     };
 
     const updatedUserCourses = [...userCourses];
     const taken: CourseInSchedule[] = [];
     const planned: CourseInSchedule[] = [];
-    const eligible: CourseInSchedule[] = [];
+    const notUsed: CourseInSchedule[] = [];
 
     if (!reqDetails.courseIds) {
         return { processedRequirement, userCourses: updatedUserCourses };
@@ -135,7 +135,7 @@ export const processElective = async (
             matchingCourse.usedInRequirements.includes(reqId)
         )) {
             // Course used in an overlapping requirement
-            eligible.push(matchingCourse);
+            notUsed.push(matchingCourse);
         } else {
             // Course not used yet
             matchingCourse.usedInRequirements.push(reqDetails._id);
@@ -148,12 +148,12 @@ export const processElective = async (
     }
 
     // Fetch full course data for all courses
-    processedRequirement.takenCourses = await fetchCoursesInSchedule(taken);
-    processedRequirement.plannedCourses = await fetchCoursesInSchedule(planned);
-    processedRequirement.eligibleButNotUsedCourses = await fetchCoursesInSchedule(eligible);
+    processedRequirement.taken = taken;
+    processedRequirement.planned = planned;
+    processedRequirement.notUsed = notUsed;
 
     processedRequirement.completed = 
-        processedRequirement.takenCourses.length >= (reqDetails.numberOfRequiredCourses || 0);
+        processedRequirement.taken.length >= (reqDetails.numberOfRequiredCourses || 0);
 
     return { processedRequirement, userCourses: updatedUserCourses };
 };
@@ -183,14 +183,14 @@ export const processCore = async (
         courseGrps: reqDetails.courseGrps,
         overlap: reqDetails.overlap,
         completed: false,
-        takenCourses: [],
-        plannedCourses: [],
-        eligibleButNotUsedCourses: []
+        taken: [],
+        planned: [],
+        notUsed: []
     };
 
     const taken: CourseInSchedule[] = [];
     const planned: CourseInSchedule[] = [];
-    const eligible: CourseInSchedule[] = [];
+    const notUsed: CourseInSchedule[] = [];
 
     if (!reqDetails.courseGrps) {
         return { processedRequirement, userCourses };
@@ -216,7 +216,7 @@ export const processCore = async (
             } else if (reqDetails.overlap?.some(_id => 
                 matchingUserCourse.usedInRequirements.includes(_id)
             )) {
-                eligible.push(matchingUserCourse);
+                notUsed.push(matchingUserCourse);
             } else if (!completed) {
                 matchingUserCourse.usedInRequirements.push(reqDetails._id);
                 if (isTaken(matchingUserCourse)) {
@@ -226,18 +226,18 @@ export const processCore = async (
                 }
                 completed = true;
             } else {
-                eligible.push(matchingUserCourse);
+                notUsed.push(matchingUserCourse);
             }
         }
     }
 
     // Fetch full course data for all courses
-    processedRequirement.takenCourses = await fetchCoursesInSchedule(taken);
-    processedRequirement.plannedCourses = await fetchCoursesInSchedule(planned);
-    processedRequirement.eligibleButNotUsedCourses = await fetchCoursesInSchedule(eligible);
+    processedRequirement.taken = taken;
+    processedRequirement.planned = planned;
+    processedRequirement.notUsed = notUsed;
 
     processedRequirement.completed = 
-        processedRequirement.takenCourses.length >= (reqDetails.numberOfRequiredCourses || 0);
+        processedRequirement.taken.length >= (reqDetails.numberOfRequiredCourses || 0);
 
     return { processedRequirement, userCourses };
 };

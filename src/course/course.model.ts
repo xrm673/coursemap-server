@@ -178,6 +178,7 @@ export interface CourseFavored {
 
 export interface CourseInSchedule {
   _id: string;
+  tts: string; // title (short)
   grpIdentifier?: string; // must be specified if course has topic
   usedInRequirements: Array<string>; // list of requirements that use this course
   credit: number; // the credits gained (would gain) from this course
@@ -187,58 +188,10 @@ export interface CourseInSchedule {
   // repeatWarning: boolean; // true if the course has been planned or taken in other semesters
 }
 
-export interface FetchedCourseInSchedule extends Course{
-  usedInRequirements: Array<string>; // Schedule field: list of requirements that use this course
-  credit: number; // Schedule field: the credits gained (would gain) from this course
-  semester: string; // Schedule field: the semester that the course is planned or taken in
-  sections?: Array<string>; // Schedule field: list of sections (e.g., "LEC-001", "DIS-601", etc.)
-}
-
-export interface CourseInScheduleForRequirement extends CourseInSchedule {
-  sbj: string; // Schedule field: subject
-  nbr: string; // Schedule field: number
-  tts: string; // Schedule field: title (short)
-}
-
 export const findById = async (_id: string): Promise<Course | null> => {
   return await CourseModel.findOne({ _id }).lean();
 };
 
 export const findByIds = async (_ids: string[]): Promise<Course[]> => {
   return await CourseModel.find({ _id: { $in: _ids } }).lean();
-};
-
-/*
- * Convert a CourseInSchedule to a FetchedCourseInSchedule by fetching the course data
- * and merging it with the schedule data
- */
-export const fetchCourseInSchedule = async (courseInSchedule: CourseInSchedule): Promise<FetchedCourseInSchedule | null> => {
-  const course = await findById(courseInSchedule._id);
-  if (!course) return null;
-
-  // If the course has a grpIdentifier, ensure we're using the correct enrollment group
-  let enrollGroup = undefined;
-  if (courseInSchedule.grpIdentifier) {
-    enrollGroup = course.enrollGroups.find(group => group.grpIdentifier === courseInSchedule.grpIdentifier);
-    if (!enrollGroup) return null;
-  }
-
-  // Merge the course data with the schedule data
-  return {
-    ...course,
-    usedInRequirements: courseInSchedule.usedInRequirements,
-    credit: courseInSchedule.credit,
-    semester: courseInSchedule.semester,
-    sections: courseInSchedule.sections
-  };
-};
-
-/*
- * Convert an array of CourseInSchedule to FetchedCourseInSchedule
- */
-export const fetchCoursesInSchedule = async (coursesInSchedule: CourseInSchedule[]): Promise<FetchedCourseInSchedule[]> => {
-  const fetchedCourses = await Promise.all(
-    coursesInSchedule.map(course => fetchCourseInSchedule(course))
-  );
-  return fetchedCourses.filter((course): course is FetchedCourseInSchedule => course !== null);
 };
