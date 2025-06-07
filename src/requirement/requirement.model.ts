@@ -46,7 +46,8 @@ export interface ProcessedRequirement extends Requirement {
     courseGrps?: ProcessedCourseGroup[];
     taken: CourseInSchedule[];
     planned: CourseInSchedule[];
-    notUsed: CourseInSchedule[];
+    takenNotUsed: CourseInSchedule[];
+    plannedNotUsed: CourseInSchedule[];
 }
 
 export const findById = async (id: string): Promise<Requirement | null> => {

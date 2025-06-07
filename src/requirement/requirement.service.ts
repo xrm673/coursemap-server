@@ -56,7 +56,8 @@ export const processRequirements = async (
                 completed: false,
                 taken: [],
                 planned: [],
-                notUsed: [],
+                takenNotUsed: [],
+                plannedNotUsed: [],
             });
             continue;
         }
@@ -103,13 +104,15 @@ export const processElective = async (
         completed: false,
         taken: [],
         planned: [],
-        notUsed: []
+        takenNotUsed: [],
+        plannedNotUsed: [],
     };
 
     const updatedUserCourses = [...userCourses];
     const taken: CourseInSchedule[] = [];
     const planned: CourseInSchedule[] = [];
-    const notUsed: CourseInSchedule[] = [];
+    const takenNotUsed: CourseInSchedule[] = [];
+    const plannedNotUsed: CourseInSchedule[] = [];
 
     if (!reqDetails.courseIds) {
         return { processedRequirement, userCourses: updatedUserCourses };
@@ -131,12 +134,15 @@ export const processElective = async (
             } else {
                 planned.push(matchingCourse);
             }
-            completed = checkRequirementCompletion(reqDetails, matchingCourse, completedCount);
+            ({ completed, completedCount } = checkRequirementCompletion(reqDetails, matchingCourse, completedCount));
         } else if (reqDetails.overlap?.some(reqId => 
             matchingCourse.usedInRequirements.includes(reqId)
         )) {
-            // Course used in an overlapping requirement
-            notUsed.push(matchingCourse);
+            if (isTaken(matchingCourse)) {
+                takenNotUsed.push(matchingCourse);
+            } else {
+                plannedNotUsed.push(matchingCourse);
+            }
         } else if (!completed) {
             // If requirement isn't completed and course isn't used in overlapping requirements
             matchingCourse.usedInRequirements.push(reqDetails._id);
@@ -145,16 +151,21 @@ export const processElective = async (
             } else {
                 planned.push(matchingCourse);
             }
-            completed = checkRequirementCompletion(reqDetails, matchingCourse, completedCount);
+            ({ completed, completedCount } = checkRequirementCompletion(reqDetails, matchingCourse, completedCount));
         } else {
             // If requirement is completed, any additional matching courses go to notUsed
-            notUsed.push(matchingCourse);
+            if (isTaken(matchingCourse)) {
+                takenNotUsed.push(matchingCourse);
+            } else {
+                plannedNotUsed.push(matchingCourse);
+            }
         }
     }
 
     processedRequirement.taken = taken;
     processedRequirement.planned = planned;
-    processedRequirement.notUsed = notUsed;
+    processedRequirement.takenNotUsed = takenNotUsed;
+    processedRequirement.plannedNotUsed = plannedNotUsed;
 
     processedRequirement.completed = 
         processedRequirement.taken.length >= (reqDetails.numberOfRequiredCourses || 0);
@@ -187,12 +198,14 @@ export const processCore = async (
         completed: false,
         taken: [],
         planned: [],
-        notUsed: []
+        takenNotUsed: [],
+        plannedNotUsed: [],
     };
 
     const taken: CourseInSchedule[] = [];
     const planned: CourseInSchedule[] = [];
-    const notUsed: CourseInSchedule[] = [];
+    const takenNotUsed: CourseInSchedule[] = [];
+    const plannedNotUsed: CourseInSchedule[] = [];
 
     if (!reqDetails.courseGrps) {
         return { processedRequirement, userCourses };
@@ -217,7 +230,11 @@ export const processCore = async (
             } else if (reqDetails.overlap?.some(_id => 
                 matchingUserCourse.usedInRequirements.includes(_id)
             )) {
-                notUsed.push(matchingUserCourse);
+                if (isTaken(matchingUserCourse)) {
+                    takenNotUsed.push(matchingUserCourse);
+                } else {
+                    plannedNotUsed.push(matchingUserCourse);
+                }
             } else if (!completed) {
                 matchingUserCourse.usedInRequirements.push(reqDetails._id);
                 if (isTaken(matchingUserCourse)) {
@@ -227,7 +244,11 @@ export const processCore = async (
                 }
                 completed = true;
             } else {
-                notUsed.push(matchingUserCourse);
+                if (isTaken(matchingUserCourse)) {
+                    takenNotUsed.push(matchingUserCourse);
+                } else {
+                    plannedNotUsed.push(matchingUserCourse);
+                }
             }
         }
         processedRequirement.courseGrps?.push({
@@ -239,11 +260,11 @@ export const processCore = async (
     // Fetch full course data for all courses
     processedRequirement.taken = taken;
     processedRequirement.planned = planned;
-    processedRequirement.notUsed = notUsed;
+    processedRequirement.takenNotUsed = takenNotUsed;
+    processedRequirement.plannedNotUsed = plannedNotUsed;
 
     processedRequirement.completed = 
         processedRequirement.taken.length >= (reqDetails.numberOfRequiredCourses || 0);
-    console.log("processed requirement: ", processedRequirement);
 
     return { processedRequirement, userCourses };
 };
@@ -271,12 +292,13 @@ function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule)
 
 function checkRequirementCompletion(
     reqDetails: Requirement, matchingCourse: CourseInSchedule, completedCount: number
-): boolean {
+): { completed: boolean, completedCount: number } {
     // If requirement isn't completed and course isn't used in overlapping requirements
     if (reqDetails.numberOfRequiredCourses) {
         completedCount++;
     } else if (reqDetails.numberOfRequiredCredits) {
         completedCount += matchingCourse.credit;
     }
-    return completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
+    const completed = completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
+    return { completed, completedCount };
 }
