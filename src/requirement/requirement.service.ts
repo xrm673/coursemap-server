@@ -2,7 +2,7 @@
 // Business logic for requirements
 
 import * as RequirementModel from './requirement.model';
-import { Requirement, ProcessedRequirement } from './requirement.model';
+import { Requirement, ProcessedRequirement, ProcessedCourseGroup } from './requirement.model';
 import { CourseInSchedule } from '../course/course.model';
 import { isTaken } from '../course/course.service';
 
@@ -35,7 +35,6 @@ export const processRequirements = async (
 
     // Fetch all requirements in one query
     const requirements = await RequirementModel.findByIds(requirementIds);
-    console.log("requirements: ", requirements);
 
     for (const reqDetails of requirements) {
         // If no userCourses, create basic processed requirement
@@ -183,14 +182,13 @@ export const processCore = async (
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
         courseNotes: reqDetails.courseNotes,
-        courseGrps: reqDetails.courseGrps?.map(grp => ({ ...grp, completed: false })),
+        courseGrps: [] as ProcessedCourseGroup[], // Initialize as empty array with type assertion
         overlap: reqDetails.overlap,
         completed: false,
         taken: [],
         planned: [],
         notUsed: []
     };
-    console.log("initial requirement: ", processedRequirement);
 
     const taken: CourseInSchedule[] = [];
     const planned: CourseInSchedule[] = [];
