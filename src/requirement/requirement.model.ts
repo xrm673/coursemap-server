@@ -12,6 +12,8 @@ export interface Requirement {
     name: string;
     descr: string[];
     numberOfRequiredCourses?: number; // total number of courses required
+    useCredit?: boolean; // whether to use credit to calculate the number of courses required
+    numberOfRequiredCredits?: number; // total number of credits required (if useCredit is true)
     // an array of course ids (for elective requirements)
     courseIds?: Array<string>
     courseNotes?: Array<CourseNote>;

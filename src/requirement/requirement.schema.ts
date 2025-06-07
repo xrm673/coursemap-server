@@ -22,6 +22,8 @@ const RequirementSchema = new Schema<Requirement>({
   name: { type: String, required: true },
   descr: [String],
   numberOfRequiredCourses: Number,
+  useCredit: Boolean,
+  numberOfRequiredCredits: Number,
   courseIds: [String],
   courseNotes: [CourseNoteSchema],
   courseGrps: [CourseGroupSchema],
