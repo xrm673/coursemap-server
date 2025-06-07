@@ -35,6 +35,7 @@ export const processRequirements = async (
 
     // Fetch all requirements in one query
     const requirements = await RequirementModel.findByIds(requirementIds);
+    console.log("requirements: ", requirements);
 
     for (const reqDetails of requirements) {
         // If no userCourses, create basic processed requirement
@@ -189,6 +190,7 @@ export const processCore = async (
         planned: [],
         notUsed: []
     };
+    console.log("initial requirement: ", processedRequirement);
 
     const taken: CourseInSchedule[] = [];
     const planned: CourseInSchedule[] = [];
@@ -243,6 +245,7 @@ export const processCore = async (
 
     processedRequirement.completed = 
         processedRequirement.taken.length >= (reqDetails.numberOfRequiredCourses || 0);
+    console.log("processed requirement: ", processedRequirement);
 
     return { processedRequirement, userCourses };
 };

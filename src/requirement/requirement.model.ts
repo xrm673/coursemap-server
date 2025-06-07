@@ -50,13 +50,13 @@ export interface ProcessedRequirement extends Requirement {
 }
 
 export const findById = async (id: string): Promise<Requirement | null> => {
-    const requirement = await RequirementModel.findOne({ id });
+    const requirement = await RequirementModel.findOne({ id }).lean();
     if (!requirement) return null;
     return requirement;
 };
 
 export const findByIds = async (_ids: string[]): Promise<Requirement[]> => {
-    return await RequirementModel.find({ _id: { $in: _ids } });
+    return await RequirementModel.find({ _id: { $in: _ids } }).lean();
 };
 
 
