@@ -123,12 +123,12 @@ export const processElective = async (
     // Process the matching courses
     for (const matchingCourse of matchingUserCourses) {
         if (matchingCourse.usedInRequirements.includes(reqDetails._id)) {
+            // Course already used in this requirement
             if (reqDetails.numberOfRequiredCourses) {
                 completedCount++;
             } else if (reqDetails.numberOfRequiredCredits) {
                 completedCount += matchingCourse.credit;
             }
-            // Course already used in this requirement
             if (isTaken(matchingCourse)) {
                 taken.push(matchingCourse);
             } else {
@@ -140,19 +140,23 @@ export const processElective = async (
         )) {
             // Course used in an overlapping requirement
             notUsed.push(matchingCourse);
-        } else {
-            // Course not used yet
-            if (!completed) {
-                matchingCourse.usedInRequirements.push(reqDetails._id);
-                if (isTaken(matchingCourse)) {
-                    taken.push(matchingCourse);
-                } else {
-                    planned.push(matchingCourse);
-                }
-                completed = completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
-            } else {
-                notUsed.push(matchingCourse);
+        } else if (!completed) {
+            // If requirement isn't completed and course isn't used in overlapping requirements
+            if (reqDetails.numberOfRequiredCourses) {
+                completedCount++;
+            } else if (reqDetails.numberOfRequiredCredits) {
+                completedCount += matchingCourse.credit;
             }
+            matchingCourse.usedInRequirements.push(reqDetails._id);
+            if (isTaken(matchingCourse)) {
+                taken.push(matchingCourse);
+            } else {
+                planned.push(matchingCourse);
+            }
+            completed = completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
+        } else {
+            // If requirement is completed, any additional matching courses go to notUsed
+            notUsed.push(matchingCourse);
         }
     }
 
