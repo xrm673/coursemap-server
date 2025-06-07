@@ -36,9 +36,14 @@ export interface CourseNote {
     recommendedByDepartment?: boolean;
 }
 
+export interface ProcessedCourseGroup extends CourseGroup {
+    completed: boolean;
+}
+
 // processed requirement
 export interface ProcessedRequirement extends Requirement {
     completed: boolean;
+    courseGrps?: ProcessedCourseGroup[];
     taken: CourseInSchedule[];
     planned: CourseInSchedule[];
     notUsed: CourseInSchedule[];

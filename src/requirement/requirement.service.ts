@@ -48,7 +48,10 @@ export const processRequirements = async (
                 numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
                 courseIds: reqDetails.courseIds,
                 courseNotes: reqDetails.courseNotes,
-                courseGrps: reqDetails.courseGrps,
+                courseGrps: reqDetails.courseGrps?.map(grp => ({
+                    ...grp,
+                    completed: false
+                })),
                 overlap: reqDetails.overlap,
                 completed: false,
                 taken: [],
@@ -96,7 +99,6 @@ export const processElective = async (
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
         courseNotes: reqDetails.courseNotes,
-        courseGrps: reqDetails.courseGrps,
         overlap: reqDetails.overlap,
         completed: false,
         taken: [],
@@ -124,17 +126,12 @@ export const processElective = async (
     for (const matchingCourse of matchingUserCourses) {
         if (matchingCourse.usedInRequirements.includes(reqDetails._id)) {
             // Course already used in this requirement
-            if (reqDetails.numberOfRequiredCourses) {
-                completedCount++;
-            } else if (reqDetails.numberOfRequiredCredits) {
-                completedCount += matchingCourse.credit;
-            }
             if (isTaken(matchingCourse)) {
                 taken.push(matchingCourse);
             } else {
                 planned.push(matchingCourse);
             }
-            completed = completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
+            completed = checkRequirementCompletion(reqDetails, matchingCourse, completedCount);
         } else if (reqDetails.overlap?.some(reqId => 
             matchingCourse.usedInRequirements.includes(reqId)
         )) {
@@ -142,18 +139,13 @@ export const processElective = async (
             notUsed.push(matchingCourse);
         } else if (!completed) {
             // If requirement isn't completed and course isn't used in overlapping requirements
-            if (reqDetails.numberOfRequiredCourses) {
-                completedCount++;
-            } else if (reqDetails.numberOfRequiredCredits) {
-                completedCount += matchingCourse.credit;
-            }
             matchingCourse.usedInRequirements.push(reqDetails._id);
             if (isTaken(matchingCourse)) {
                 taken.push(matchingCourse);
             } else {
                 planned.push(matchingCourse);
             }
-            completed = completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
+            completed = checkRequirementCompletion(reqDetails, matchingCourse, completedCount);
         } else {
             // If requirement is completed, any additional matching courses go to notUsed
             notUsed.push(matchingCourse);
@@ -190,7 +182,7 @@ export const processCore = async (
         numberOfRequiredCourses: reqDetails.numberOfRequiredCourses,
         courseIds: reqDetails.courseIds,
         courseNotes: reqDetails.courseNotes,
-        courseGrps: reqDetails.courseGrps,
+        courseGrps: reqDetails.courseGrps?.map(grp => ({ ...grp, completed: false })),
         overlap: reqDetails.overlap,
         completed: false,
         taken: [],
@@ -207,14 +199,13 @@ export const processCore = async (
     }
 
     for (const group of reqDetails.courseGrps) {
+        let completed = false;
         for (const courseId of group.courseIds) {
             const matchingUserCourse = userCourses.find(uc => 
                 uc._id === courseId
             );
 
             if (!matchingUserCourse) continue;
-
-            let completed = false;
 
             if (matchingUserCourse.usedInRequirements.includes(reqDetails._id)) {
                 if (isTaken(matchingUserCourse)) {
@@ -239,6 +230,10 @@ export const processCore = async (
                 notUsed.push(matchingUserCourse);
             }
         }
+        processedRequirement.courseGrps?.push({
+            ...group,
+            completed
+        });
     }
 
     // Fetch full course data for all courses
@@ -271,4 +266,16 @@ function isMatchingCourse(reqDetails: Requirement, userCourse: CourseInSchedule)
         }
     }
     return false;
+}
+
+function checkRequirementCompletion(
+    reqDetails: Requirement, matchingCourse: CourseInSchedule, completedCount: number
+): boolean {
+    // If requirement isn't completed and course isn't used in overlapping requirements
+    if (reqDetails.numberOfRequiredCourses) {
+        completedCount++;
+    } else if (reqDetails.numberOfRequiredCredits) {
+        completedCount += matchingCourse.credit;
+    }
+    return completedCount >= (reqDetails.numberOfRequiredCourses ?? reqDetails.numberOfRequiredCredits ?? 0);
 }
