@@ -212,6 +212,7 @@ export const processCore = async (
     }
 
     for (const group of reqDetails.courseGrps) {
+        let takenOrPlanned = false;
         let completed = false;
         for (const courseId of group.courseIds) {
             const matchingUserCourse = userCourses.find(uc => 
@@ -221,12 +222,13 @@ export const processCore = async (
             if (!matchingUserCourse) continue;
 
             if (matchingUserCourse.usedInRequirements.includes(reqDetails._id)) {
+                takenOrPlanned = true;
                 if (isTaken(matchingUserCourse)) {
+                    completed = true;
                     taken.push(matchingUserCourse);
                 } else {
                     planned.push(matchingUserCourse);
                 }
-                completed = true;
             } else if (reqDetails.overlap?.some(_id => 
                 matchingUserCourse.usedInRequirements.includes(_id)
             )) {
@@ -235,14 +237,15 @@ export const processCore = async (
                 } else {
                     plannedNotUsed.push(matchingUserCourse);
                 }
-            } else if (!completed) {
+            } else if (!takenOrPlanned) {
+                takenOrPlanned = true;
                 matchingUserCourse.usedInRequirements.push(reqDetails._id);
                 if (isTaken(matchingUserCourse)) {
+                    completed = true;
                     taken.push(matchingUserCourse);
                 } else {
                     planned.push(matchingUserCourse);
                 }
-                completed = true;
             } else {
                 if (isTaken(matchingUserCourse)) {
                     takenNotUsed.push(matchingUserCourse);
