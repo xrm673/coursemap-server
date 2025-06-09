@@ -10,6 +10,7 @@ import { LATEST_YEAR } from '../utils/constants';
 import { processRequirements } from '../requirement/requirement.service';
 import { getUser, getUserConcentrations, getUserCourses, checkIsUserMajor } from '../user/user.service';
 import { MajorModel as MajorMongoModel } from './major.schema';
+import { partialUpdateUser } from '../user/user.service';
 
 /*
     Get all majors, optionally filtered by collegeId
@@ -34,7 +35,7 @@ export const getMajorWithRequirements = async (
     majorId: string, userId?: string
 ): Promise<{
     processedMajor: ProcessedMajor,
-    userCourses: CourseInSchedule[]
+    updatedUser: User | undefined
 }> => {
     const major = await getMajor(majorId);
     let user: User | undefined = undefined;
@@ -94,7 +95,14 @@ export const getMajorWithRequirements = async (
         endRequirements
     };
 
-    return { processedMajor, userCourses };
+    let updatedUser: User | undefined = undefined;
+
+    // Update user's scheduleData if this is their major
+    if (user && isUserMajor && '_id' in user) {
+        updatedUser = await partialUpdateUser(user._id as string, { scheduleData: userCourses });
+    }
+
+    return { processedMajor, updatedUser };
 };
 
 /*

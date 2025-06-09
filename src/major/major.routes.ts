@@ -9,7 +9,7 @@ const majorRouter = Router();
 
 majorRouter.get('/', MajorController.getAllMajors);
 majorRouter.get('/:majorId', MajorController.getMajorById);
-majorRouter.get('/:majorId/requirements', optionalAuthenticate, MajorController.getMajorWithRequirements);
+majorRouter.post('/:majorId/requirements', optionalAuthenticate, MajorController.getMajorWithRequirements);
 
 export { majorRouter };
 
