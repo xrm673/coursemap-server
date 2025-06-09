@@ -6,27 +6,42 @@ import * as UserService from './user.service';
 
 export const getUser = async (req: Request, res: Response): Promise<void> => {
     try {
-        const requestingUser = req.user;
-        if (!requestingUser) {
-            res.status(401).json({ error: 'Authentication required' });
-            return;
-        }
-        const userData = await UserService.getUser(requestingUser._id);
-        res.status(200).json(userData);
+        const user = await UserService.getUser(req.user!._id);
+        res.json(user);
     } catch (error) {
         if (error instanceof UserService.UserError) {
-            if (error.message === 'User not found') {
-                res.status(404).json({ error: error.message });
-            } else {
-                res.status(400).json({ error: error.message });
-            }
+            res.status(404).json({ message: error.message });
         } else {
-            console.error('Error getting user data:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ message: 'Internal server error' });
         }
     }
 };
 
+export const updateUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const updatedUser = await UserService.updateUser(req.user!._id, req.body);
+        res.json(updatedUser);
+    } catch (error) {
+        if (error instanceof UserService.UserError) {
+            res.status(404).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+};
+
+export const partialUpdateUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const updatedUser = await UserService.partialUpdateUser(req.user!._id, req.body);
+        res.json(updatedUser);
+    } catch (error) {
+        if (error instanceof UserService.UserError) {
+            res.status(404).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+};
 
 export const getFavoredCourses = async (req: Request, res: Response): Promise<void> => {
     try {
