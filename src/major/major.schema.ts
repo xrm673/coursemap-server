@@ -10,18 +10,18 @@ const RawBasicRequirementSchema = new Schema<RawBasicRequirement>({
   year: String,
   collegeId: String,
   requirements: { type: [String], required: true }
-});
+}, { _id: false });
 
 const ConcentrationSchema = new Schema<Concentration>({
   concentrationName: { type: String, required: true },
   requirements: { type: [String], required: true }
-});
+}, { _id: false });
 
 const RawEndRequirementSchema = new Schema<RawEndRequirement>({
   year: String,
   collegeId: String,
   requirements: { type: [String], required: true }
-});
+}, { _id: false });
 
 const MajorSchema = new Schema<Major>({
   _id: { type: String, required: true },

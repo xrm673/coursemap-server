@@ -5,7 +5,7 @@ import * as RequirementModel from './requirement.model';
 import { Requirement, ProcessedRequirement, ProcessedCourseGroup } from './requirement.model';
 import { CourseInSchedule } from '../course/course.model';
 import { isTaken } from '../course/course.service';
-
+import { RequirementModel as RequirementMongoModel } from './requirement.schema';
 
 export const getRequirement = async (
     id: string
@@ -17,6 +17,14 @@ export const getRequirement = async (
     return requirement;
 };
 
+export const getRequirementsByIds = async (requirementIds: string[]): Promise<Requirement[]> => {
+    return await RequirementMongoModel.find({ _id: { $in: requirementIds } }).lean();
+};
+
+export const getAllRequirements = async (majorId?: string): Promise<Requirement[]> => {
+    const query = majorId ? { majorId } : {};
+    return await RequirementMongoModel.find(query).lean();
+};
 
 /**
  * Processes requirements and their relationship with user's courses.
