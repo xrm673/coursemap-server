@@ -9,6 +9,9 @@ export interface Requirement {
     _id: string;
     type: string;
     majorId: string;
+    year?: number;
+    collegeId?: string;
+    concentrationName?: string;
     name: string;
     descr: string[];
     numberOfRequiredCourses?: number; // total number of courses required
