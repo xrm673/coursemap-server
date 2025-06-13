@@ -1,26 +1,26 @@
 import { Schema, model } from 'mongoose';
-import { CollegeInMajor, Concentration, Major, RawBasicRequirement, RawEndRequirement } from './major.model';
+import { CollegeInMajor, Major, RawBasicSection, RawConcentration, RawEndSection } from './major.model';
 
 const CollegeInMajorSchema = new Schema<CollegeInMajor>({
   collegeId: { type: String, required: true },
   name: { type: String, required: true }
 }, { _id: false });
 
-const RawBasicRequirementSchema = new Schema<RawBasicRequirement>({
+const RawBasicSectionSchema = new Schema<RawBasicSection>({
   year: String,
   collegeId: String,
-  requirements: { type: [String], required: true }
+  requirementIds: { type: [String], required: true }
 }, { _id: false });
 
-const ConcentrationSchema = new Schema<Concentration>({
+const RawConcentrationSchema = new Schema<RawConcentration>({
   concentrationName: { type: String, required: true },
-  requirements: { type: [String], required: true }
+  requirementIds: { type: [String], required: true }
 }, { _id: false });
 
-const RawEndRequirementSchema = new Schema<RawEndRequirement>({
+const RawEndSectionSchema = new Schema<RawEndSection>({
   year: String,
   collegeId: String,
-  requirements: { type: [String], required: true }
+  requirementIds: { type: [String], required: true }
 }, { _id: false });
 
 const MajorSchema = new Schema<Major>({
@@ -31,9 +31,9 @@ const MajorSchema = new Schema<Major>({
   needsCollege: { type: Boolean, required: true },
   colleges: [CollegeInMajorSchema],
   numberOfRequiredCourses: Number,
-  rawBasicRequirements: [RawBasicRequirementSchema],
-  concentrations: [ConcentrationSchema],
-  rawEndRequirements: [RawEndRequirementSchema],
+  rawBasicSections: [RawBasicSectionSchema],
+  rawConcentrations: [RawConcentrationSchema],
+  rawEndSections: [RawEndSectionSchema],
   onboardingCourses: [String]
 });
 

@@ -1,35 +1,21 @@
 // src/major/major.model.ts
 // Data structure and MongoDB interactions
 
-import { ProcessedRequirement } from '../requirement/requirement.model';
 import { MajorModel } from './major.schema';
 
 // stored in the database
 export interface Major {
-    _id: string;  // Custom string ID for the major
+    _id: string;
     name: string;
     description?: string;
     needsYear: boolean;
     needsCollege: boolean;
     colleges: Array<CollegeInMajor>;
     numberOfRequiredCourses?: Number,
-    rawBasicRequirements: Array<RawBasicRequirement>;
-    concentrations?: Array<Concentration>;
-    rawEndRequirements?: Array<RawEndRequirement>;
+    rawBasicSections: Array<RawBasicSection>;
+    rawConcentrations?: Array<RawConcentration>;
+    rawEndSections?: Array<RawEndSection>;
     onboardingCourses: string[];
-}
-
-// provided to frontend
-export interface ProcessedMajor extends Omit<Major, 'rawBasicRequirements' | 'rawEndRequirements'> {
-    isUserMajor: boolean;
-    selectedCollegeId: string;
-    selectedYear: string;
-    basicRequirements: ProcessedRequirement[];
-    concentrationRequirements?: Array<{
-        concentration: string;
-        requirements: ProcessedRequirement[];
-    }>;
-    endRequirements?: ProcessedRequirement[];
 }
 
 export interface CollegeInMajor {
@@ -37,21 +23,21 @@ export interface CollegeInMajor {
     name: string;
 }
 
-export interface RawBasicRequirement {
+export interface RawBasicSection {
     year?: string;
     collegeId?: string;
-    requirements: string[];
+    requirementIds: string[];
 }
 
-export interface Concentration {
+export interface RawConcentration {
     concentrationName: string;
-    requirements: string[];
+    requirementIds: string[];
 }
 
-export interface RawEndRequirement {
+export interface RawEndSection {
     year?: string;
     collegeId?: string;
-    requirements: string[];
+    requirementIds: string[];
 }
 
 /*
