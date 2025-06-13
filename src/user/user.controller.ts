@@ -17,9 +17,9 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export const partialUpdateUser = async (req: Request, res: Response): Promise<void> => {
+export const updateUser = async (req: Request, res: Response): Promise<void> => {
     try {
-        const updatedUser = await UserService.partialUpdateUser(req.user!._id, req.body);
+        const updatedUser = await UserService.updateUser(req.user!._id, req.body);
         res.json(updatedUser);
     } catch (error) {
         if (error instanceof UserService.UserError) {
