@@ -23,6 +23,24 @@ export const getUser = async (userId: string): Promise<Omit<User, 'passwordHash'
     return userData;
 };
 
+// Partial update of user document
+export const updateUser = async (userId: string, updates: Partial<Omit<User, '_id' | 'passwordHash' | 'role' | 'createdAt' | 'updatedAt'>>): Promise<User> => {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new UserError('User not found');
+    }
+
+    // Only update fields that are provided
+    Object.keys(updates).forEach((key) => {
+        if (key in user && key !== '_id' && key !== 'passwordHash' && key !== 'role') {
+            (user as any)[key] = (updates as any)[key];
+        }
+    });
+
+    await user.save();
+    return user;
+};
+
 export const getUserCourses = (user: User): CourseInSchedule[] => {
     return user.scheduleData || [];
 };
@@ -198,46 +216,6 @@ export const checkIsUserMajor = (user: User, majorId: string): boolean => {
     }
 
     return user.majors.some(userMajor => userMajor.majorId === majorId);
-};
-
-// Full update of user document
-export const updateUser = async (userId: string, userData: Omit<User, '_id' | 'passwordHash' | 'role' | 'createdAt' | 'updatedAt'>): Promise<User> => {
-    const user = await UserModel.findById(userId);
-    if (!user) {
-        throw new UserError('User not found');
-    }
-
-    // Update allowed fields
-    user.email = userData.email;
-    user.netid = userData.netid;
-    user.firstName = userData.firstName;
-    user.lastName = userData.lastName;
-    user.year = userData.year;
-    user.college = userData.college;
-    user.majors = userData.majors;
-    user.scheduleData = userData.scheduleData;
-    user.favoredCourses = userData.favoredCourses;
-
-    await user.save();
-    return user;
-};
-
-// Partial update of user document
-export const partialUpdateUser = async (userId: string, updates: Partial<Omit<User, '_id' | 'passwordHash' | 'role' | 'createdAt' | 'updatedAt'>>): Promise<User> => {
-    const user = await UserModel.findById(userId);
-    if (!user) {
-        throw new UserError('User not found');
-    }
-
-    // Only update fields that are provided
-    Object.keys(updates).forEach((key) => {
-        if (key in user && key !== '_id' && key !== 'passwordHash' && key !== 'role') {
-            (user as any)[key] = (updates as any)[key];
-        }
-    });
-
-    await user.save();
-    return user;
 };
 
 

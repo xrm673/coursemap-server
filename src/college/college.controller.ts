@@ -37,30 +37,3 @@ export const getCollegeById = async (
         }
     }
 };
-
-/*
-    Search colleges by major name
-*/
-export const searchCollegesByMajor = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
-    try {
-        const { query } = req.query;
-        
-        if (!query || typeof query !== 'string') {
-            res.status(400).json({ error: 'Search query is required' });
-            return;
-        }
-
-        const colleges = await CollegeService.searchCollegesByMajor(query);
-        res.status(200).json(colleges);
-    } catch (error) {
-        if (error instanceof Error && error.message === 'Search query is required') {
-            res.status(400).json({ error: error.message });
-        } else {
-            console.error('Error searching colleges:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-};

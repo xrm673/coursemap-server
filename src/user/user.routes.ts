@@ -8,7 +8,7 @@ import { authenticate } from '../utils/middleware/auth.middleware';
 const userRouter = Router();
 
 userRouter.get('/me', authenticate, UserController.getUser);
-userRouter.patch('/me', authenticate, UserController.partialUpdateUser);
+userRouter.patch('/me', authenticate, UserController.updateUser);
 
 userRouter.post('/me/favorites', authenticate, UserController.addFavoredCourse);
 userRouter.delete('/me/favorites', authenticate, UserController.deleteFavoredCourse);

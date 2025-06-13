@@ -4,9 +4,20 @@
 import { Request, Response } from 'express';
 import * as RequirementService from './requirement.service';
 
+export const getRequirements = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { majorId } = req.query;
+        const requirements = await RequirementService.getRequirements(majorId as string);
+        res.status(200).json(requirements);
+    } catch (error) {
+        console.error('Error fetching requirements:', error);
+        res.status(500).json({ error: 'Internal server error while fetching requirements' });
+    }
+};
+
 export const getRequirementById = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
-    const requirement = await RequirementService.getRequirement(id);
+    const requirement = await RequirementService.getRequirementById(id);
     res.status(200).json(requirement);
 };
 
@@ -21,17 +32,6 @@ export const getRequirementsByIds = async (req: Request, res: Response): Promise
         res.status(200).json(requirements);
     } catch (error) {
         console.error('Error fetching requirements by IDs:', error);
-        res.status(500).json({ error: 'Internal server error while fetching requirements' });
-    }
-};
-
-export const getAllRequirements = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { majorId } = req.query;
-        const requirements = await RequirementService.getAllRequirements(majorId as string);
-        res.status(200).json(requirements);
-    } catch (error) {
-        console.error('Error fetching requirements:', error);
         res.status(500).json({ error: 'Internal server error while fetching requirements' });
     }
 };
