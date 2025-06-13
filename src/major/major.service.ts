@@ -7,14 +7,14 @@ import { Major } from './major.model';
 /*
     Get all majors, optionally filtered by collegeId
 */
-export const getAllMajors = async (collegeId?: string): Promise<Major[]> => {
+export const getMajors = async (collegeId?: string): Promise<Major[]> => {
     return await MajorModel.find(collegeId);
 };
 
 /*
     Get a major by its id
 */
-export const getMajor = async (majorId: string): Promise<Major> => {
+export const getMajorById = async (majorId: string): Promise<Major> => {
     const major = await MajorModel.findById(majorId);
     if (!major) {
         throw new Error('Major not found');
