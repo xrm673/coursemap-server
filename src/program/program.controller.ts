@@ -1,16 +1,14 @@
-// src/major/major.controller.ts
-// Request handlers for majors
+// src/program/program.controller.ts
+// Request handlers for programs
 
 import { Request, Response } from 'express';
 import * as ProgramService from './program.service';
-
 
 export const getPrograms = async (
     req: Request, res: Response
 ): Promise<void> => {
     try {
-        const { collegeId } = req.query;
-        const programs = await ProgramService.getPrograms(collegeId as string | undefined);
+        const programs = await ProgramService.getPrograms(req.query);
         res.status(200).json(programs);
     } catch (error) {
         console.error('Error getting programs:', error);

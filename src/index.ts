@@ -3,10 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { courseRouter } from './course/course.routes';
-import { majorRouter } from './major/major.routes';
 import { userRouter } from './user/user.routes';
 import { requirementRouter } from './requirement/requirement.routes';
-import { collegeRouter } from './college/college.routes';
 import { authRouter } from './auth/auth.routes';
 import { programRouter } from './program/program.routes';
 
@@ -24,10 +22,8 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/courses', courseRouter);
 app.use('/api/programs', programRouter);
-app.use('/api/majors', majorRouter); 
 app.use('/api/requirements', requirementRouter);
 app.use('/api/users', userRouter);
-app.use('/api/colleges', collegeRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
