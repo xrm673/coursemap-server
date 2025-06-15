@@ -64,18 +64,18 @@ export interface RawEndSection {
 export type Program = Major | Minor | College;
 
 /*
-    Find a major by its _id
-*/
-export const findById = async (_id: string): Promise<Program | null> => {
-    return await ProgramModel.findOne({ _id }).lean();
-};
-
-/*
-    Find all majors, optionally filtered by collegeId
+    Find all programs, optionally filtered by collegeId
 */
 export const find = async (collegeId?: string): Promise<Program[]> => {
     if (collegeId) {
         return await ProgramModel.find({ 'colleges.collegeId': collegeId }).lean();
     }
     return await ProgramModel.find().lean();
+};
+
+/*
+    Find a program by its _id
+*/
+export const findById = async (_id: string): Promise<Program | null> => {
+    return await ProgramModel.findOne({ _id }).lean();
 };

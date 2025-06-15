@@ -1,5 +1,5 @@
-// src/major/major.routes.ts
-// Routes for majors
+// src/program/program.routes.ts
+// Routes for programs
 
 import { Router } from 'express';
 import * as ProgramController from './program.controller';

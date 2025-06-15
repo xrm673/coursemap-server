@@ -1,9 +1,14 @@
 import { Schema, model } from 'mongoose';
-import { CollegeInProgram, Program, RawBasicSection, RawConcentration, RawEndSection } from './program.model';
+import { CollegeInProgram, MajorInCollege, Program, RawBasicSection, RawConcentration, RawEndSection } from './program.model';
 
 const CollegeInProgramSchema = new Schema<CollegeInProgram>({
   collegeId: { type: String, required: true },
   name: { type: String, required: true }
+}, { _id: false });
+
+const MajorInCollegeSchema = new Schema<MajorInCollege>({
+    majorId: { type: String, required: true },
+    name: { type: String, required: true }
 }, { _id: false });
 
 const RawBasicSectionSchema = new Schema<RawBasicSection>({
@@ -28,8 +33,10 @@ const ProgramSchema = new Schema<Program>({
   name: { type: String, required: true },
   description: String,
   needsYear: { type: Boolean, required: true },
+  needsMajor: { type: Boolean, required: true },
   needsCollege: { type: Boolean, required: true },
   colleges: [CollegeInProgramSchema],
+  majors: [MajorInCollegeSchema],
   numberOfRequiredCourses: Number,
   rawBasicSections: [RawBasicSectionSchema],
   rawConcentrations: [RawConcentrationSchema],

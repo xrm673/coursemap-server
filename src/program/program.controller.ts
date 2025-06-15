@@ -13,7 +13,7 @@ export const getPrograms = async (
         const programs = await ProgramService.getPrograms(collegeId as string | undefined);
         res.status(200).json(programs);
     } catch (error) {
-        console.error('Error getting majors:', error);
+        console.error('Error getting programs:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -22,11 +22,11 @@ export const getProgramById = async (
     req: Request, res: Response
 ): Promise<void> => {
     try {
-        const { majorId } = req.params;
-        const major = await ProgramService.getProgramById(majorId);
-        res.status(200).json(major);
+        const { programId } = req.params;
+        const program = await ProgramService.getProgramById(programId);
+        res.status(200).json(program);
     } catch (error) {
-        console.error('Error getting major:', error);
+        console.error('Error getting program:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
