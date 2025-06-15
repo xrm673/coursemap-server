@@ -5,16 +5,16 @@ export interface BaseProgram {
     name: string;
     type: "major" | "minor" | "college";
     description?: string;
-    needsYear: boolean;
-    needsMajor: boolean;
-    needsCollege: boolean;
+    yearDependent: boolean;
+    majorDependent: boolean;
+    collegeDependent: boolean;
     rawBasicSections: Array<RawBasicSection>;
 }
 
 export interface Major extends BaseProgram {
     type: "major";
     colleges: Array<CollegeInProgram>;
-    needsMajor: false;
+    majorDependent: false;
     onboardingCourses: string[];
     rawConcentrations?: Array<RawConcentration>;
     rawEndSections?: Array<RawEndSection>;
@@ -31,7 +31,7 @@ export interface Minor extends BaseProgram {
 export interface College extends BaseProgram {
     type: "college";
     majors: MajorInCollege[];
-    needsCollege: false;
+    collegeDependent: false;
 }
 
 export interface MajorInCollege {
