@@ -1,11 +1,10 @@
 // src/user/user.service.ts
 // Business logic for users
 
-import { Types } from 'mongoose';
 import * as UserModel from './user.model';
 import { User } from './user.model'; 
 import { CourseInSchedule, CourseFavored } from '../course/course.model';
-import { Major } from '../major/major.model';
+import { Major } from '../program/program.model';
 
 export class UserError extends Error {
     constructor(message: string) {
