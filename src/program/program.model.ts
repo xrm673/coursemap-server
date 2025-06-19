@@ -8,7 +8,7 @@ export interface BaseProgram {
     yearDependent: boolean;
     majorDependent: boolean;
     collegeDependent: boolean;
-    rawBasicSections: Array<RawBasicSection>;
+    rawMainReqSets: Array<RawMainReqSet>;
 }
 
 export interface Major extends BaseProgram {
@@ -17,7 +17,7 @@ export interface Major extends BaseProgram {
     majorDependent: false;
     onboardingCourses: string[];
     rawConcentrations?: Array<RawConcentration>;
-    rawEndSections?: Array<RawEndSection>;
+    rawEndReqSets?: Array<RawEndReqSet>;
     numberOfRequiredCourses?: Number,
 }
 
@@ -44,7 +44,7 @@ export interface CollegeInProgram {
     name: string;
 }
 
-export interface RawBasicSection {
+export interface RawMainReqSet {
     years?: string[];
     collegeId?: string;
     requirementIds: string[];
@@ -55,7 +55,7 @@ export interface RawConcentration {
     requirementIds: string[];
 }
 
-export interface RawEndSection {
+export interface RawEndReqSet {
     years?: string[];
     collegeId?: string;
     requirementIds: string[];
