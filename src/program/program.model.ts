@@ -45,7 +45,7 @@ export interface CollegeInProgram {
 }
 
 export interface RawBasicSection {
-    year?: string;
+    years?: string[];
     collegeId?: string;
     requirementIds: string[];
 }
@@ -56,7 +56,7 @@ export interface RawConcentration {
 }
 
 export interface RawEndSection {
-    year?: string;
+    years?: string[];
     collegeId?: string;
     requirementIds: string[];
 }

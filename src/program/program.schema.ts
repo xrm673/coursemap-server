@@ -12,7 +12,7 @@ const MajorInCollegeSchema = new Schema<MajorInCollege>({
 }, { _id: false });
 
 const RawBasicSectionSchema = new Schema<RawBasicSection>({
-  year: String,
+  years: [String],
   collegeId: String,
   requirementIds: { type: [String], required: true }
 }, { _id: false });
@@ -23,7 +23,7 @@ const RawConcentrationSchema = new Schema<RawConcentration>({
 }, { _id: false });
 
 const RawEndSectionSchema = new Schema<RawEndSection>({
-  year: String,
+  years: [String],
   collegeId: String,
   requirementIds: { type: [String], required: true }
 }, { _id: false });

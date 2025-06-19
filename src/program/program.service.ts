@@ -1,7 +1,6 @@
 // src/program/program.service.ts
 // Business logic for programs
 
-import * as ProgramModel from './program.model';
 import { Program } from './program.model';
 import { ProgramModel as ProgramMongoModel } from './program.schema';
 
