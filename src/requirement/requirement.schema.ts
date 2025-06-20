@@ -18,7 +18,7 @@ const CourseNoteSchema = new Schema<CourseNote>({
 const RequirementSchema = new Schema<Requirement>({
   _id: { type: String, required: true, unique: true },
   type: { type: String, required: true },
-  majorId: { type: String, required: true },
+  programId: { type: String, required: true },
   year: String,
   collegeId: String,
   concentrationName: String,

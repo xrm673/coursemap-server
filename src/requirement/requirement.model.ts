@@ -7,7 +7,7 @@ import { RequirementModel } from './requirement.schema';
 export interface Requirement {
     _id: string;
     type: string;
-    majorId: string;
+    programId: string;
     year?: number;
     collegeId?: string;
     concentrationName?: string;

@@ -8,24 +8,22 @@ export interface BaseProgram {
     yearDependent: boolean;
     majorDependent: boolean;
     collegeDependent: boolean;
+    numberOfRequiredCourses?: Number,
     rawMainReqSets: Array<RawMainReqSet>;
+    rawConcentrations?: Array<RawConcentration>;
+    rawEndReqSets?: Array<RawEndReqSet>;
+    onboardingCourses?: string[];
 }
 
 export interface Major extends BaseProgram {
     type: "major";
     colleges: Array<CollegeInProgram>;
     majorDependent: false;
-    onboardingCourses: string[];
-    rawConcentrations?: Array<RawConcentration>;
-    rawEndReqSets?: Array<RawEndReqSet>;
-    numberOfRequiredCourses?: Number,
 }
 
 export interface Minor extends BaseProgram {
     type: "minor";
     colleges: Array<CollegeInProgram>;
-    onboardingCourses: string[];
-    numberOfRequiredCourses?: Number,
 }
 
 export interface College extends BaseProgram {
