@@ -6,8 +6,8 @@ import * as RequirementService from './requirement.service';
 
 export const getRequirements = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { majorId } = req.query;
-        const requirements = await RequirementService.getRequirements(majorId as string);
+        const { programId } = req.query;
+        const requirements = await RequirementService.getRequirements(programId as string);
         res.status(200).json(requirements);
     } catch (error) {
         console.error('Error fetching requirements:', error);
