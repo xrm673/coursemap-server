@@ -6,9 +6,9 @@ import { Requirement } from './requirement.model';
 import { RequirementModel as RequirementMongoModel } from './requirement.schema';
 
 export const getRequirements = async (
-    majorId?: string
+    programId?: string
 ): Promise<Requirement[]> => {
-    const query = majorId ? { majorId } : {};
+    const query = programId ? { programId } : {};
     return await RequirementMongoModel.find(query).lean();
 };
 
