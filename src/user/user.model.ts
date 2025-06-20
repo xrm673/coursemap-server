@@ -16,6 +16,12 @@ export interface UserMajor {
     concentrationNames?: string[];
 }
 
+export interface UserMinor {
+    minorId: string;
+    name: string;
+    concentrationNames?: string[];
+}
+
 // Define the interface for User document
 export interface User extends Document {
     email: string;
@@ -25,6 +31,7 @@ export interface User extends Document {
     year: string;
     college: UserCollege;
     majors: UserMajor[];
+    minors: UserMinor[];
     scheduleData?: CourseInSchedule[];
     favoredCourses?: CourseFavored[];
     

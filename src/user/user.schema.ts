@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { User, UserCollege, UserMajor } from './user.model';
+import { User, UserCollege, UserMajor, UserMinor } from './user.model';
 import { CourseFavored, CourseInSchedule } from '../course/course.model';
 
 const UserCollegeSchema = new Schema<UserCollege>({
@@ -9,6 +9,12 @@ const UserCollegeSchema = new Schema<UserCollege>({
 
 const UserMajorSchema = new Schema<UserMajor>({
   majorId: { type: String, required: true },
+  name: { type: String, required: true },
+  concentrationNames: [{ type: String }]
+}, { _id: false });
+
+const UserMinorSchema = new Schema<UserMinor>({
+  minorId: { type: String, required: true },
   name: { type: String, required: true },
   concentrationNames: [{ type: String }]
 }, { _id: false });
@@ -36,6 +42,7 @@ const UserSchema = new Schema<User>({
   year: { type: String, required: true },
   college: UserCollegeSchema,
   majors: [UserMajorSchema],
+  minors: [UserMinorSchema],
   scheduleData: [CourseInScheduleSchema],
   favoredCourses: [CourseFavoredSchema],
   passwordHash: { type: String, required: true },
