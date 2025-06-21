@@ -24,7 +24,7 @@ const RequirementSchema = new Schema<Requirement>({
   concentrationName: String,
   name: { type: String, required: true },
   descr: [String],
-  numberOfRequiredCourses: Number,
+  totalCoursesRequired: Number,
   useCredit: Boolean,
   numberOfRequiredCredits: Number,
   courseIds: [String],

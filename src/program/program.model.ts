@@ -8,7 +8,7 @@ export interface BaseProgram {
     yearDependent: boolean;
     majorDependent: boolean;
     collegeDependent: boolean;
-    numberOfRequiredCourses?: Number,
+    totalCoursesRequired?: Number,
     rawMainReqSets: Array<RawMainReqSet>;
     rawConcentrations?: Array<RawConcentration>;
     rawEndReqSets?: Array<RawEndReqSet>;

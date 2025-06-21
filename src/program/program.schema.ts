@@ -37,7 +37,7 @@ const ProgramSchema = new Schema<Program>({
   collegeDependent: { type: Boolean, required: true },
   colleges: [CollegeInProgramSchema],
   majors: [MajorInCollegeSchema],
-  numberOfRequiredCourses: Number,
+  totalCoursesRequired: Number,
   rawMainReqSets: [RawMainReqSetSchema],
   rawConcentrations: [RawConcentrationSchema],
   rawEndReqSets: [RawEndReqSetSchema],
