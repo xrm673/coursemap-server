@@ -14,12 +14,12 @@ export interface Requirement {
     name: string;
     descr: string[];
     totalCoursesRequired?: number; // total number of courses required
-    useCredit?: boolean; // whether to use credit to calculate the number of courses required
-    numberOfRequiredCredits?: number; // total number of credits required (if useCredit is true)
+    totalCreditsRequired?: number; // total number of credits required (if useCredit is true)
     // an array of course ids (for elective requirements)
     courseIds?: Array<string>
     courseNotes?: Array<CourseNote>;
     // an array of course groups (for core requirements)
+    totalGroupsRequired?: number; // total number of groups required
     courseGrps?: Array<CourseGroup>;
     overlap?: Array<string>; // overlap requirement ids
 }
@@ -27,6 +27,7 @@ export interface Requirement {
 export interface CourseGroup {
     _id: number;
     topic?: string;
+    nbrOfCoursesRequired: number;
     courseIds: Array<string>;
     notes?: string;
 }
