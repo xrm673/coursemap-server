@@ -29,6 +29,7 @@ export interface CourseGroup {
     topic?: string;
     nbrOfCoursesRequired: number;
     courseIds: Array<string>;
+    noUpperLimit?: boolean;
     notes?: string;
 }
 

@@ -6,6 +6,7 @@ const CourseGroupSchema = new Schema<CourseGroup>({
   topic: String,
   nbrOfCoursesRequired: Number,
   courseIds: { type: [String], required: true },
+  noUpperLimit: Boolean,
   notes: String
 });
 
