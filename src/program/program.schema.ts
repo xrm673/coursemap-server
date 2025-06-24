@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { CollegeInProgram, MajorInCollege, Program, RawMainReqSet, RawConcentration, RawEndReqSet } from './program.model';
+import { CollegeInProgram, MajorInCollege, Program, RawMainReqSet, RawConcentration, RawEndReqSet, RawReqSet, RawCategorySection, RawCategory } from './program.model';
 
 const CollegeInProgramSchema = new Schema<CollegeInProgram>({
   collegeId: { type: String, required: true },
@@ -28,6 +28,28 @@ const RawEndReqSetSchema = new Schema<RawEndReqSet>({
   requirementIds: { type: [String], required: true }
 }, { _id: false });
 
+const RawCategorySchema = new Schema<RawCategory>({
+    categoryName: String,
+    numCateCoursesRequired: Number,
+    hasUpperLimit: Boolean,
+    requirementIds: { type: [String], required: true }
+  }, { _id: false });
+
+
+const RawCategorySectionSchema = new Schema<RawCategorySection>({
+    numCategoriesRequired: Number,
+    numSectCoursesRequired: Number,
+    isConcentration: Boolean,
+    aggregateBySum: Boolean,
+    categories: { type: [RawCategorySchema], required: true }
+}, { _id: false });
+
+const RawReqSetSchema = new Schema<RawReqSet>({
+  years: [String],
+  collegeIds: [String],
+  rawReqList: { type: [Schema.Types.Mixed], required: true }
+}, { _id: false });
+
 const ProgramSchema = new Schema<Program>({
   _id: { type: String, required: true },
   name: { type: String, required: true },
@@ -38,6 +60,7 @@ const ProgramSchema = new Schema<Program>({
   colleges: [CollegeInProgramSchema],
   majors: [MajorInCollegeSchema],
   totalCoursesRequired: Number,
+  rawReqSets: [RawReqSetSchema],
   rawMainReqSets: [RawMainReqSetSchema],
   rawConcentrations: [RawConcentrationSchema],
   rawEndReqSets: [RawEndReqSetSchema],

@@ -11,6 +11,7 @@ export interface BaseProgram {
     totalCoursesRequired?: Number,
     rawMainReqSets: Array<RawMainReqSet>;
     rawConcentrations?: Array<RawConcentration>;
+    rawReqSets?: Array<RawReqSet>;
     rawEndReqSets?: Array<RawEndReqSet>;
     onboardingCourses?: string[];
 }
@@ -45,6 +46,32 @@ export interface CollegeInProgram {
 export interface RawMainReqSet {
     years?: string[];
     collegeIds?: string[];
+    requirementIds: string[];
+}
+
+export interface RawReqSet {
+    years?: string[];
+    collegeIds?: string[];
+    rawReqList: Array<string | RawCategorySection>;
+}
+
+export interface RawCategorySection {
+    numCategoriesRequired: number;
+    numSectCoursesRequired: number;
+
+    isConcentration: boolean;
+
+    // When true: total courses completed = sum of courses completed of all categories
+    // When false: total courses completed = highest number of courses completed in any single category
+    aggregateBySum: boolean;
+
+    categories: Array<RawCategory>;
+}
+
+export interface RawCategory {
+    categoryName: string;
+    numCateCoursesRequired: number;
+    hasUpperLimit: boolean; // true if courses can't be used for the category section if the category is completed
     requirementIds: string[];
 }
 
