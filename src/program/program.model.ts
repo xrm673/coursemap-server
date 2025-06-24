@@ -8,11 +8,9 @@ export interface BaseProgram {
     yearDependent: boolean;
     majorDependent: boolean;
     collegeDependent: boolean;
-    totalCoursesRequired?: Number,
-    rawMainReqSets: Array<RawMainReqSet>;
-    rawConcentrations?: Array<RawConcentration>;
+    totalCoursesRequired?: Number;
+    concentrationNames?: string[];
     rawReqSets?: Array<RawReqSet>;
-    rawEndReqSets?: Array<RawEndReqSet>;
     onboardingCourses?: string[];
 }
 
@@ -43,12 +41,6 @@ export interface CollegeInProgram {
     name: string;
 }
 
-export interface RawMainReqSet {
-    years?: string[];
-    collegeIds?: string[];
-    requirementIds: string[];
-}
-
 export interface RawReqSet {
     years?: string[];
     collegeIds?: string[];
@@ -72,17 +64,6 @@ export interface RawCategory {
     categoryName: string;
     numCateCoursesRequired: number;
     hasUpperLimit: boolean; // true if courses can't be used for the category section if the category is completed
-    requirementIds: string[];
-}
-
-export interface RawConcentration {
-    concentrationName: string;
-    requirementIds: string[];
-}
-
-export interface RawEndReqSet {
-    years?: string[];
-    collegeIds?: string[];
     requirementIds: string[];
 }
 
