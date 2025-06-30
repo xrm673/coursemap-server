@@ -4,7 +4,7 @@ import { CourseGroup, CourseNote, Requirement } from './requirement.model';
 const CourseGroupSchema = new Schema<CourseGroup>({
   _id: { type: Number, required: true, unique: true },
   topic: String,
-  nbrOfCoursesRequired: Number,
+  groupRequiredCoursesCount: Number,
   courseIds: { type: [String], required: true },
   noUpperLimit: Boolean,
   notes: String
@@ -26,11 +26,10 @@ const RequirementSchema = new Schema<Requirement>({
   concentrationName: String,
   name: { type: String, required: true },
   descr: [String],
-  totalCoursesRequired: Number,
-  totalCreditsRequired: Number,
+  reqRequiredCoursesCount: Number,
   courseIds: [String],
   courseNotes: [CourseNoteSchema],
-  totalGroupsRequired: Number,
+  reqRequiredGroupsCount: Number,
   courseGrps: [CourseGroupSchema],
   overlap: [String]
 });

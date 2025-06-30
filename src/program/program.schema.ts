@@ -13,15 +13,15 @@ const MajorInCollegeSchema = new Schema<MajorInCollege>({
 
 const RawCategorySchema = new Schema<RawCategory>({
     categoryName: String,
-    numCateCoursesRequired: Number,
+    categoryRequiredCoursesCount: Number,
     hasUpperLimit: Boolean,
     requirementIds: { type: [String], required: true }
   }, { _id: false });
 
 
 const RawCategorySectionSchema = new Schema<RawCategorySection>({
-    numCategoriesRequired: Number,
-    numSectCoursesRequired: Number,
+    sectionRequiredCategoriesCount: Number,
+    sectionRequiredCoursesCount: Number,
     isConcentration: Boolean,
     aggregateBySum: Boolean,
     categories: { type: [RawCategorySchema], required: true }

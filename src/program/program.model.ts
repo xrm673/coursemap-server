@@ -48,8 +48,8 @@ export interface RawReqSet {
 }
 
 export interface RawCategorySection {
-    numCategoriesRequired: number;
-    numSectCoursesRequired: number;
+    sectionRequiredCategoriesCount: number;
+    sectionRequiredCoursesCount?: number;
 
     isConcentration: boolean;
 
@@ -62,7 +62,7 @@ export interface RawCategorySection {
 
 export interface RawCategory {
     categoryName: string;
-    numCateCoursesRequired: number;
+    categoryRequiredCoursesCount: number;
     hasUpperLimit: boolean; // true if courses can't be used for the category section if the category is completed
     requirementIds: string[];
 }
