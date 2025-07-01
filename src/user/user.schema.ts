@@ -10,13 +10,15 @@ const UserCollegeSchema = new Schema<UserCollege>({
 const UserMajorSchema = new Schema<UserMajor>({
   majorId: { type: String, required: true },
   name: { type: String, required: true },
-  concentrationNames: [{ type: String }]
+  concentrationNames: [{ type: String }],
+  trackName: { type: String }
 }, { _id: false });
 
 const UserMinorSchema = new Schema<UserMinor>({
   minorId: { type: String, required: true },
   name: { type: String, required: true },
-  concentrationNames: [{ type: String }]
+  concentrationNames: [{ type: String }],
+  trackName: { type: String }
 }, { _id: false });
 
 const CourseInScheduleSchema = new Schema<CourseInSchedule>({

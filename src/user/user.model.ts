@@ -14,12 +14,14 @@ export interface UserMajor {
     majorId: string;
     name: string;
     concentrationNames?: string[];
+    trackName?: string;
 }
 
 export interface UserMinor {
     minorId: string;
     name: string;
     concentrationNames?: string[];
+    trackName?: string;
 }
 
 // Define the interface for User document

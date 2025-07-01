@@ -20,6 +20,7 @@ const RawCategorySchema = new Schema<RawCategory>({
 
 
 const RawCategorySectionSchema = new Schema<RawCategorySection>({
+    sectionName: String,
     sectionRequiredCategoriesCount: Number,
     sectionRequiredCoursesCount: Number,
     isConcentration: Boolean,
@@ -40,10 +41,12 @@ const ProgramSchema = new Schema<Program>({
   yearDependent: { type: Boolean, required: true },
   majorDependent: { type: Boolean, required: true },
   collegeDependent: { type: Boolean, required: true },
+  trackDependent: { type: Boolean, required: true },
   colleges: [CollegeInProgramSchema],
   majors: [MajorInCollegeSchema],
   totalCoursesRequired: Number,
   concentrationNames: [String],
+  trackNames: [String],
   rawReqSets: [RawReqSetSchema],
   onboardingCourses: [String]
 });

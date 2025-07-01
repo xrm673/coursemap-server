@@ -8,8 +8,10 @@ export interface BaseProgram {
     yearDependent: boolean;
     majorDependent: boolean;
     collegeDependent: boolean;
+    trackDependent: boolean;
     totalCoursesRequired?: Number;
     concentrationNames?: string[];
+    trackNames?: string[];
     rawReqSets?: Array<RawReqSet>;
     onboardingCourses?: string[];
 }
@@ -44,10 +46,12 @@ export interface CollegeInProgram {
 export interface RawReqSet {
     years?: string[];
     collegeIds?: string[];
+    trackNames?: string[];
     rawReqList: Array<string | RawCategorySection>;
 }
 
 export interface RawCategorySection {
+    sectionName: string;
     sectionRequiredCategoriesCount: number;
     sectionRequiredCoursesCount?: number;
 
