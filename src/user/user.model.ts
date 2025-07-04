@@ -31,6 +31,7 @@ export interface User extends Document {
     firstName: string;
     lastName: string;
     year: string;
+    semesters: string[];
     college: UserCollege;
     majors: UserMajor[];
     minors: UserMinor[];

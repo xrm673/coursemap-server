@@ -42,6 +42,7 @@ const UserSchema = new Schema<User>({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   year: { type: String, required: true },
+  semesters: { type: [String], required: true },
   college: UserCollegeSchema,
   majors: [UserMajorSchema],
   minors: [UserMinorSchema],
