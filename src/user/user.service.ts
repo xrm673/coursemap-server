@@ -2,8 +2,7 @@
 // Business logic for users
 
 import * as UserModel from './user.model';
-import { User } from './user.model'; 
-import { CourseInSchedule, CourseFavored } from '../course/course.model';
+import { User, RawCourseFavored, CourseInSchedule } from './user.model'; 
 import { Major } from '../program/program.model';
 
 export class UserError extends Error {
@@ -59,7 +58,7 @@ export const getUserConcentrations = (
     return userMajor?.concentrationNames || [];
 };
 
-export const getFavoredCourses = async (userId: string): Promise<CourseFavored[]> => {
+export const getFavoredCourses = async (userId: string): Promise<RawCourseFavored[]> => {
     const user = await UserModel.findById(userId);
     if (!user) {
         throw new UserError('User not found');
@@ -67,7 +66,7 @@ export const getFavoredCourses = async (userId: string): Promise<CourseFavored[]
     return user.favoredCourses || [];
 };
 
-export const addFavoredCourse = async (userId: string, courseFavored: CourseFavored): Promise<User> => {
+export const addFavoredCourse = async (userId: string, courseFavored: RawCourseFavored): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -78,7 +77,7 @@ export const addFavoredCourse = async (userId: string, courseFavored: CourseFavo
             user.favoredCourses = [];
         }
 
-        const newFavorite: CourseFavored = {
+        const newFavorite: RawCourseFavored = {
             _id: courseFavored._id
         };
         
@@ -96,7 +95,7 @@ export const addFavoredCourse = async (userId: string, courseFavored: CourseFavo
     }
 };
 
-export const deleteFavoredCourse = async (userId: string, courseToDelete: CourseFavored): Promise<void> => {
+export const deleteFavoredCourse = async (userId: string, courseToDelete: RawCourseFavored): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {

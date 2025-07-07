@@ -171,23 +171,6 @@ export interface NoDataCourse {
   noData: boolean;
 }
 
-export interface CourseFavored {
-  _id: string;
-  grpIdentifier?: string;
-}
-
-export interface CourseInSchedule {
-  _id: string;
-  tts: string; // title (short)
-  grpIdentifier?: string; // must be specified if course has topic
-  usedInRequirements: Array<string>; // list of requirements that use this course
-  credit: number; // the credits gained (would gain) from this course
-  semester: string; // the semester that the course is planned or taken in
-  sections?: Array<string>; // list of sections (e.g., "LEC-001", "DIS-601", etc.)
-  // qualified: boolean; // true if the course is qualified to take in the planned semester
-  // repeatWarning: boolean; // true if the course has been planned or taken in other semesters
-}
-
 export const findById = async (_id: string): Promise<Course | null> => {
   return await CourseModel.findOne({ _id }).lean();
 };

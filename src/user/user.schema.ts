@@ -1,6 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { User, UserCollege, UserMajor, UserMinor } from './user.model';
-import { CourseFavored, CourseInSchedule } from '../course/course.model';
+import { CourseInSchedule, RawCourseFavored, User, UserCollege, UserMajor, UserMinor } from './user.model';
 
 const UserCollegeSchema = new Schema<UserCollege>({
   collegeId: { type: String, required: true },
@@ -31,7 +30,7 @@ const CourseInScheduleSchema = new Schema<CourseInSchedule>({
   sections: [String]
 });
 
-const CourseFavoredSchema = new Schema<CourseFavored>({
+const CourseFavoredSchema = new Schema<RawCourseFavored>({
   _id: { type: String, required: true },
   grpIdentifier: String
 });
