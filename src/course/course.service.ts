@@ -3,7 +3,7 @@
 
 import { plannedSemesters, takenSemesters } from '../utils/constants';
 import * as CourseModel from './course.model';
-import { Course, NoDataCourse, CourseInSchedule } from './course.model';
+import { Course, NoDataCourse } from './course.model';
 
 
 export const getCourse = async (courseId: string, ttl?: string): Promise<Course | NoDataCourse> => {
@@ -25,12 +25,4 @@ export const getCourse = async (courseId: string, ttl?: string): Promise<Course 
 export const getCoursesByIds = async (courseIds: string[]): Promise<Course[]> => {
   const courses = await CourseModel.findByIds(courseIds);
   return courses;
-};
-
-export const isTaken = (course: CourseInSchedule): boolean => {
-  return takenSemesters.includes(course.semester);
-};
-
-export const isPlanned = (course: CourseInSchedule): boolean => {
-  return plannedSemesters.includes(course.semester);
 };
