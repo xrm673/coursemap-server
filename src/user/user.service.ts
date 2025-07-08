@@ -2,7 +2,7 @@
 // Business logic for users
 
 import * as UserModel from './user.model';
-import { User, RawCourseFavored, CourseInSchedule } from './user.model'; 
+import { User, RawCourseFavored, RawCourseInSchedule } from './user.model'; 
 import { Major } from '../program/program.model';
 
 export class UserError extends Error {
@@ -39,32 +39,6 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, '_i
     return user;
 };
 
-export const getUserCourses = (user: User): CourseInSchedule[] => {
-    return user.scheduleData || [];
-};
-
-export const getUserConcentrations = (
-    user: User, 
-    major: Major
-): string[] => {
-    if (!user.majors) {
-        return [];
-    }
-
-    // Find the major in user's majors array
-    const userMajor = user.majors.find(userMajor => userMajor.majorId === major._id);
-    
-    // Return concentrations if found, otherwise empty array
-    return userMajor?.concentrationNames || [];
-};
-
-export const getFavoredCourses = async (userId: string): Promise<RawCourseFavored[]> => {
-    const user = await UserModel.findById(userId);
-    if (!user) {
-        throw new UserError('User not found');
-    }
-    return user.favoredCourses || [];
-};
 
 export const addFavoredCourse = async (userId: string, courseFavored: RawCourseFavored): Promise<User> => {
     try {
@@ -128,7 +102,7 @@ export const deleteFavoredCourse = async (userId: string, courseToDelete: RawCou
     }
 };
 
-export const addCourseToSchedule = async (userId: string, courseData: CourseInSchedule): Promise<User> => {
+export const addCourseToSchedule = async (userId: string, courseData: RawCourseInSchedule): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -149,9 +123,8 @@ export const addCourseToSchedule = async (userId: string, courseData: CourseInSc
             throw new UserError('This exact course is already in your schedule for this semester');
         }
 
-        const newCourse: CourseInSchedule = {
+        const newCourse: RawCourseInSchedule = {
             _id: courseData._id,
-            tts: courseData.tts,
             semester: courseData.semester,
             credit: courseData.credit,
             usedInRequirements: courseData.usedInRequirements
@@ -159,10 +132,6 @@ export const addCourseToSchedule = async (userId: string, courseData: CourseInSc
 
         if (courseData.grpIdentifier) {
             newCourse.grpIdentifier = courseData.grpIdentifier;
-        }
-
-        if (courseData.sections) {
-            newCourse.sections = courseData.sections;
         }
 
         user.scheduleData.push(newCourse);
@@ -208,13 +177,6 @@ export const deleteCourseFromSchedule = async (userId: string, courseData: {
     }
 };
 
-export const checkIsUserMajor = (user: User, majorId: string): boolean => {
-    if (!user.majors) {
-        return false;
-    }
-
-    return user.majors.some(userMajor => userMajor.majorId === majorId);
-};
 
 
 

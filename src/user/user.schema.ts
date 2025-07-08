@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { CourseInSchedule, RawCourseFavored, User, UserCollege, UserMajor, UserMinor } from './user.model';
+import { RawCourseInSchedule, RawCourseFavored, User, UserCollege, UserMajor, UserMinor } from './user.model';
 
 const UserCollegeSchema = new Schema<UserCollege>({
   collegeId: { type: String, required: true },
@@ -20,14 +20,12 @@ const UserMinorSchema = new Schema<UserMinor>({
   trackName: { type: String }
 }, { _id: false });
 
-const CourseInScheduleSchema = new Schema<CourseInSchedule>({
+const RawCourseInScheduleSchema = new Schema<RawCourseInSchedule>({
   _id: { type: String, required: true },
-  tts: { type: String, required: true },
   grpIdentifier: String,
   usedInRequirements: { type: [String], required: true },
   credit: { type: Number, required: true },
   semester: { type: String, required: true },
-  sections: [String]
 });
 
 const CourseFavoredSchema = new Schema<RawCourseFavored>({
@@ -45,7 +43,7 @@ const UserSchema = new Schema<User>({
   college: UserCollegeSchema,
   majors: [UserMajorSchema],
   minors: [UserMinorSchema],
-  scheduleData: [CourseInScheduleSchema],
+  scheduleData: [RawCourseInScheduleSchema],
   favoredCourses: [CourseFavoredSchema],
   passwordHash: { type: String, required: true },
   role: { type: String, enum: ['student', 'admin'], required: true },
