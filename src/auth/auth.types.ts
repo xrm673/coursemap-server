@@ -1,7 +1,7 @@
 // src/auth/auth.types.ts
 // Authentication type definitions
 
-import { User } from '../user/user.model';
+import { User, UserMinor } from '../user/user.model';
 import { UserMajor, UserCollege } from '../user/user.model';
 
 export interface LoginCredentials {
@@ -18,6 +18,7 @@ export interface SignupData extends LoginCredentials {
   semesters: string[];
   college: UserCollege;
   majors: UserMajor[];
+  minors?: Array<UserMinor>;
 }
 
 export interface AuthResponse {
