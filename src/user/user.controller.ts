@@ -104,7 +104,7 @@ export const deleteFavoredCourse = async (req: Request, res: Response): Promise<
     }
 };
 
-export const addCourseToSchedule = async (req: Request, res: Response): Promise<void> => {
+export const addCoursesToSchedule = async (req: Request, res: Response): Promise<void> => {
     try {
         const requestingUser = req.user;
         if (!requestingUser) {
@@ -112,36 +112,36 @@ export const addCourseToSchedule = async (req: Request, res: Response): Promise<
             return;
         }
 
-        const courseData = req.body;
-        
-        // Validate required fields
-        if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements || !courseData.tts) {
-            res.status(400).json({ error: 'Missing required fields: id, semester, credit, tts, and usedInRequirements are required' });
+        const coursesData = req.body;
+        if (!Array.isArray(coursesData) || coursesData.length === 0) {
+            res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
             return;
         }
 
-        // Validate credit is a number
-        if (typeof courseData.credit !== 'number') {
-            res.status(400).json({ error: 'Credit must be a number' });
-            return;
+        // Validate each course
+        for (const courseData of coursesData) {
+            if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
+                res.status(400).json({ error: 'Each course must have _id, semester, credit, and usedInRequirements' });
+                return;
+            }
+            if (typeof courseData.credit !== 'number') {
+                res.status(400).json({ error: 'Credit must be a number for each course' });
+                return;
+            }
+            if (!Array.isArray(courseData.usedInRequirements)) {
+                res.status(400).json({ error: 'usedInRequirements must be an array for each course' });
+                return;
+            }
+            if (courseData.sections !== undefined && !Array.isArray(courseData.sections)) {
+                res.status(400).json({ error: 'Sections must be an array if provided for each course' });
+                return;
+            }
         }
 
-        // Validate usedInRequirements is an array
-        if (!Array.isArray(courseData.usedInRequirements)) {
-            res.status(400).json({ error: 'usedInRequirements must be an array' });
-            return;
-        }
-
-        // Validate sections if provided
-        if (courseData.sections !== undefined && !Array.isArray(courseData.sections)) {
-            res.status(400).json({ error: 'Sections must be an array' });
-            return;
-        }
-
-        const updatedUser = await UserService.addCourseToSchedule(requestingUser._id, courseData);
+        const updatedUser = await UserService.addCoursesToSchedule(requestingUser._id, coursesData);
 
         res.status(200).json({
-            message: 'Course added to schedule',
+            message: 'Courses added to schedule',
             scheduleData: updatedUser.scheduleData
         });
     } catch (error) {
@@ -152,7 +152,7 @@ export const addCourseToSchedule = async (req: Request, res: Response): Promise<
                 res.status(400).json({ error: error.message });
             }
         } else {
-            console.error('Error adding course to schedule:', error);
+            console.error('Error adding courses to schedule:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }

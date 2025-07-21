@@ -102,7 +102,7 @@ export const deleteFavoredCourse = async (userId: string, courseToDelete: RawCou
     }
 };
 
-export const addCourseToSchedule = async (userId: string, courseData: RawCourseInSchedule): Promise<User> => {
+export const addCoursesToSchedule = async (userId: string, coursesData: RawCourseInSchedule[]): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -113,33 +113,31 @@ export const addCourseToSchedule = async (userId: string, courseData: RawCourseI
             user.scheduleData = [];
         }
 
-        const isDuplicate = user.scheduleData.some(course => 
-            course.semester === courseData.semester &&
-            course._id === courseData._id &&
-            (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-        );
+        for (const courseData of coursesData) {
+            const isDuplicate = user.scheduleData.some(course => 
+                course.semester === courseData.semester &&
+                course._id === courseData._id &&
+                (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+            );
 
-        if (isDuplicate) {
-            throw new UserError('This exact course is already in your schedule for this semester');
+            if (!isDuplicate) {
+                const newCourse: RawCourseInSchedule = {
+                    _id: courseData._id,
+                    semester: courseData.semester,
+                    credit: courseData.credit,
+                    usedInRequirements: courseData.usedInRequirements
+                };
+                if (courseData.grpIdentifier) {
+                    newCourse.grpIdentifier = courseData.grpIdentifier;
+                }
+                user.scheduleData.push(newCourse);
+            }
         }
 
-        const newCourse: RawCourseInSchedule = {
-            _id: courseData._id,
-            semester: courseData.semester,
-            credit: courseData.credit,
-            usedInRequirements: courseData.usedInRequirements
-        };
-
-        if (courseData.grpIdentifier) {
-            newCourse.grpIdentifier = courseData.grpIdentifier;
-        }
-
-        user.scheduleData.push(newCourse);
         await user.save();
-
         return user;
     } catch (error) {
-        console.error('Error in addCourseToSchedule:', error);
+        console.error('Error in addCoursesToSchedule:', error);
         throw error;
     }
 };
