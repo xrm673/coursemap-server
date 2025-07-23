@@ -13,8 +13,8 @@ userRouter.patch('/me', authenticate, UserController.updateUser);
 userRouter.post('/me/favorites', authenticate, UserController.addFavoredCourse);
 userRouter.delete('/me/favorites', authenticate, UserController.deleteFavoredCourse);
 
-userRouter.delete('/me/schedule', authenticate, UserController.deleteCourseFromSchedule);
 userRouter.post('/me/schedule/bulk', authenticate, UserController.addCoursesToSchedule);
+userRouter.delete('/me/schedule/bulk', authenticate, UserController.deleteCoursesFromSchedule);
 
 export { userRouter };
 

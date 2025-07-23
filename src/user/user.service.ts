@@ -142,11 +142,12 @@ export const addCoursesToSchedule = async (userId: string, coursesData: RawCours
     }
 };
 
-export const deleteCourseFromSchedule = async (userId: string, courseData: {
+
+export const deleteCoursesFromSchedule = async (userId: string, coursesData: Array<{
     _id: string;
     semester: string;
     grpIdentifier?: string;
-}): Promise<void> => {
+}>): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -157,20 +158,29 @@ export const deleteCourseFromSchedule = async (userId: string, courseData: {
             throw new UserError('No schedule data found');
         }
 
-        const courseIndex = user.scheduleData.findIndex(course => 
-            course.semester === courseData.semester &&
-            course._id === courseData._id &&
-            (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-        );
+        let notFoundCourses: string[] = [];
 
-        if (courseIndex === -1) {
-            throw new UserError('Course not found in schedule');
+        for (const courseData of coursesData) {
+            const courseIndex = user.scheduleData.findIndex(course => 
+                course.semester === courseData.semester &&
+                course._id === courseData._id &&
+                (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+            );
+
+            if (courseIndex === -1) {
+                notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
+            } else {
+                user.scheduleData.splice(courseIndex, 1);
+            }
         }
 
-        user.scheduleData.splice(courseIndex, 1);
+        if (notFoundCourses.length > 0) {
+            throw new UserError(`The following courses were not found in schedule: ${notFoundCourses.join(', ')}`);
+        }
+
         await user.save();
     } catch (error) {
-        console.error('Error in deleteCourseFromSchedule:', error);
+        console.error('Error in deleteCoursesFromSchedule:', error);
         throw error;
     }
 };

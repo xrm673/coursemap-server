@@ -158,7 +158,9 @@ export const addCoursesToSchedule = async (req: Request, res: Response): Promise
     }
 };
 
-export const deleteCourseFromSchedule = async (req: Request, res: Response): Promise<void> => {
+
+
+export const deleteCoursesFromSchedule = async (req: Request, res: Response): Promise<void> => {
     try {
         const requestingUser = req.user;
         if (!requestingUser) {
@@ -166,32 +168,32 @@ export const deleteCourseFromSchedule = async (req: Request, res: Response): Pro
             return;
         }
 
-        const { _id, semester, grpIdentifier } = req.body;
-        
-        // Validate required fields
-        if (!_id || !semester) {
-            res.status(400).json({ error: 'Missing required fields: courseId and semester are required' });
+        const coursesData = req.body;
+        if (!Array.isArray(coursesData) || coursesData.length === 0) {
+            res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
             return;
         }
 
-        await UserService.deleteCourseFromSchedule(requestingUser._id, {
-            _id,
-            semester,
-            grpIdentifier
-        });
+        // Validate each course data
+        for (const courseData of coursesData) {
+            if (!courseData._id || !courseData.semester) {
+                res.status(400).json({ error: 'Each course must have _id and semester' });
+                return;
+            }
+        }
 
-        res.status(200).json({ message: 'Course removed from schedule' });
+        await UserService.deleteCoursesFromSchedule(requestingUser._id, coursesData);
+
+        res.status(200).json({ message: 'Courses removed from schedule' });
     } catch (error) {
         if (error instanceof UserService.UserError) {
-            if (error.message === 'User not found' || 
-                error.message === 'Course not found in schedule' ||
-                error.message === 'Semester not found in schedule') {
+            if (error.message.includes('not found in schedule')) {
                 res.status(404).json({ error: error.message });
             } else {
                 res.status(400).json({ error: error.message });
             }
         } else {
-            console.error('Error deleting course from schedule:', error);
+            console.error('Error deleting courses from schedule:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
