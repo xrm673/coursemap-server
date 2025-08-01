@@ -2,7 +2,7 @@
 // Business logic for users
 
 import * as UserModel from './user.model';
-import { User, RawCourseFavored, RawCourseInSchedule } from './user.model'; 
+import { User, RawUserCourse, CourseForFavorites, CourseForSchedule, isCourseForSchedule } from './user.model'; 
 import { Major } from '../program/program.model';
 
 export class UserError extends Error {
@@ -39,98 +39,53 @@ export const updateUser = async (userId: string, updates: Partial<Omit<User, '_i
     return user;
 };
 
-
-export const addFavoredCourse = async (userId: string, courseFavored: RawCourseFavored): Promise<User> => {
+export const addCoursesToSchedule = async (userId: string, coursesData: (CourseForSchedule | CourseForFavorites)[]): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
 
-        if (!user.favoredCourses) {
-            user.favoredCourses = [];
-        }
-
-        const newFavorite: RawCourseFavored = {
-            _id: courseFavored._id
-        };
-        
-        if (courseFavored.grpIdentifier) {
-            newFavorite.grpIdentifier = courseFavored.grpIdentifier;
-        }
-
-        user.favoredCourses.push(newFavorite);
-        await user.save();
-
-        return user;
-    } catch (error) {
-        console.error('Full error in addFavoredCourse:', error);
-        throw error;
-    }
-};
-
-export const deleteFavoredCourse = async (userId: string, courseToDelete: RawCourseFavored): Promise<void> => {
-    try {
-        const user = await UserModel.findById(userId);
-        if (!user) {
-            throw new UserError('User not found');
-        }
-
-        if (!user.favoredCourses) {
-            throw new UserError('No favored courses found');
-        }
-
-        const indexToDelete = user.favoredCourses.findIndex(course => {
-            if (courseToDelete.grpIdentifier) {
-                return course._id === courseToDelete._id && 
-                       course.grpIdentifier === courseToDelete.grpIdentifier;
-            } else {
-                return course._id === courseToDelete._id && 
-                       !course.grpIdentifier;
-            }
-        });
-
-        if (indexToDelete === -1) {
-            throw new UserError('Course not found in favorites');
-        }
-
-        user.favoredCourses.splice(indexToDelete, 1);
-        await user.save();
-    } catch (error) {
-        console.error('Error in deleteFavoredCourse:', error);
-        throw error;
-    }
-};
-
-export const addCoursesToSchedule = async (userId: string, coursesData: RawCourseInSchedule[]): Promise<User> => {
-    try {
-        const user = await UserModel.findById(userId);
-        if (!user) {
-            throw new UserError('User not found');
-        }
-
-        if (!user.scheduleData) {
-            user.scheduleData = [];
+        if (!user.courses) {
+            user.courses = [];
         }
 
         for (const courseData of coursesData) {
-            const isDuplicate = user.scheduleData.some(course => 
-                course.semester === courseData.semester &&
-                course._id === courseData._id &&
-                (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-            );
-
-            if (!isDuplicate) {
-                const newCourse: RawCourseInSchedule = {
-                    _id: courseData._id,
-                    semester: courseData.semester,
-                    credit: courseData.credit,
-                    usedInRequirements: courseData.usedInRequirements
-                };
-                if (courseData.grpIdentifier) {
-                    newCourse.grpIdentifier = courseData.grpIdentifier;
+            if (isCourseForSchedule(courseData)) {
+                const isDuplicate = user.courses.some(course => 
+                    course.semester === courseData.semester &&
+                    course._id === courseData._id &&
+                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+                );
+                if (!isDuplicate) {
+                    const newCourse: RawUserCourse = {
+                        _id: courseData._id,
+                        semester: courseData.semester,
+                        credit: courseData.credit,
+                        usedInRequirements: courseData.usedInRequirements
+                    };
+                    if (courseData.grpIdentifier) {
+                        newCourse.grpIdentifier = courseData.grpIdentifier;
+                    }
+                    user.courses.push(newCourse);
                 }
-                user.scheduleData.push(newCourse);
+
+            } else {
+                const isDuplicate = user.courses.some(course => 
+                    course._id === courseData._id &&
+                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+                );
+
+                if (!isDuplicate) {
+                    const newCourse: RawUserCourse = {
+                        _id: courseData._id,
+                        usedInRequirements: courseData.usedInRequirements
+                    };
+                    if (courseData.grpIdentifier) {
+                        newCourse.grpIdentifier = courseData.grpIdentifier;
+                    }
+                    user.courses.push(newCourse);
+                }
             }
         }
 
@@ -143,34 +98,43 @@ export const addCoursesToSchedule = async (userId: string, coursesData: RawCours
 };
 
 
-export const deleteCoursesFromSchedule = async (userId: string, coursesData: Array<{
-    _id: string;
-    semester: string;
-    grpIdentifier?: string;
-}>): Promise<void> => {
+export const removeCoursesFromSchedule = async (userId: string, coursesData: (CourseForSchedule | CourseForFavorites)[]): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
 
-        if (!user.scheduleData) {
+        if (!user.courses) {
             throw new UserError('No schedule data found');
         }
 
         let notFoundCourses: string[] = [];
 
         for (const courseData of coursesData) {
-            const courseIndex = user.scheduleData.findIndex(course => 
-                course.semester === courseData.semester &&
-                course._id === courseData._id &&
-                (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-            );
+            if (isCourseForSchedule(courseData)) {
+                const courseIndex = user.courses.findIndex(course => 
+                    course.semester === courseData.semester &&
+                    course._id === courseData._id &&
+                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+                );
 
-            if (courseIndex === -1) {
-                notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
+                if (courseIndex === -1) {
+                    notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
+                } else {
+                    user.courses.splice(courseIndex, 1);
+                }
             } else {
-                user.scheduleData.splice(courseIndex, 1);
+                const courseIndex = user.courses.findIndex(course => 
+                    course._id === courseData._id &&
+                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
+                );
+
+                if (courseIndex === -1) {
+                    notFoundCourses.push(`${courseData._id}`);
+                } else {
+                    user.courses.splice(courseIndex, 1);
+                }
             }
         }
 
@@ -180,7 +144,7 @@ export const deleteCoursesFromSchedule = async (userId: string, coursesData: Arr
 
         await user.save();
     } catch (error) {
-        console.error('Error in deleteCoursesFromSchedule:', error);
+        console.error('Error in removeCoursesFromSchedule:', error);
         throw error;
     }
 };

@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { RawCourseInSchedule, RawCourseFavored, User, UserCollege, UserMajor, UserMinor } from './user.model';
+import { User, UserCollege, UserMajor, UserMinor, RawUserCourse } from './user.model';
 
 const UserCollegeSchema = new Schema<UserCollege>({
   collegeId: { type: String, required: true },
@@ -20,18 +20,14 @@ const UserMinorSchema = new Schema<UserMinor>({
   trackName: { type: String }
 }, { _id: false });
 
-const RawCourseInScheduleSchema = new Schema<RawCourseInSchedule>({
+const RawUserCourseSchema = new Schema<RawUserCourse>({
   _id: { type: String, required: true },
   grpIdentifier: String,
   usedInRequirements: { type: [String], required: true },
-  credit: { type: Number, required: true },
-  semester: { type: String, required: true },
-});
-
-const CourseFavoredSchema = new Schema<RawCourseFavored>({
-  _id: { type: String, required: true },
-  grpIdentifier: String
-});
+  credit: { type: Number },
+  semester: { type: String },
+  sections: [{ type: String }]
+}, { _id: false });
 
 const UserSchema = new Schema<User>({
   email: { type: String, required: true, unique: true },
@@ -43,8 +39,7 @@ const UserSchema = new Schema<User>({
   college: UserCollegeSchema,
   majors: [UserMajorSchema],
   minors: [UserMinorSchema],
-  scheduleData: [RawCourseInScheduleSchema],
-  favoredCourses: [CourseFavoredSchema],
+  courses: [RawUserCourseSchema],
   passwordHash: { type: String, required: true },
   role: { type: String, enum: ['student', 'admin'], required: true },
   lastLogin: { type: Date }

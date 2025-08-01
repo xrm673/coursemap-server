@@ -3,6 +3,7 @@
 
 import { Document } from 'mongoose';
 import { UserModel } from './user.schema';
+import { Course } from '../course/course.model';
 
 export interface UserCollege {
     collegeId: string;
@@ -34,8 +35,7 @@ export interface User extends Document {
     college: UserCollege;
     majors: UserMajor[];
     minors: UserMinor[];
-    scheduleData?: RawCourseInSchedule[];
-    favoredCourses?: RawCourseFavored[];
+    courses: RawUserCourse[];
     
     // Authentication fields
     passwordHash?: string;
@@ -45,18 +45,25 @@ export interface User extends Document {
     updatedAt: Date;
 }
 
-export interface RawCourseFavored {
+export interface RawUserCourse {
     _id: string;
     grpIdentifier?: string;
-}
-
-export interface RawCourseInSchedule {
-    _id: string;
-    grpIdentifier?: string; // must be specified if course has topic
     usedInRequirements: Array<string>; // list of requirements that use this course
+    credit?: number; // the credits gained (would gain) from this course
+    semester?: string; // the semester that the course is planned or taken in
+    sections?: Array<string>; // the sections of the course that the user is taking
+  }
+
+export interface CourseForFavorites extends Course {
+    grpIdentifier?: string;
+    usedInRequirements: Array<string>; // list of requirements that use this course
+  }
+  
+  export interface CourseForSchedule extends CourseForFavorites {
     credit: number; // the credits gained (would gain) from this course
     semester: string; // the semester that the course is planned or taken in
-}
+    sections?: Array<string>; // the sections of the course that the user is taking
+  }
 
 // Export database operations as functions
 export const findById = async (id: string): Promise<User | null> => {
@@ -78,4 +85,8 @@ export const updateUserLastLogin = async (userId: string): Promise<void> => {
         updatedAt: new Date()
     });
 };
+
+export const isCourseForSchedule = (course: CourseForFavorites | CourseForSchedule): course is CourseForSchedule => {
+    return 'semester' in course && 'credit' in course;
+  }
 

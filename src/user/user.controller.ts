@@ -3,6 +3,7 @@
 
 import { Request, Response } from 'express';
 import * as UserService from './user.service';
+import { User, RawUserCourse, CourseForFavorites, CourseForSchedule, isCourseForSchedule } from './user.model';
 
 export const getUser = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -30,80 +31,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-export const addFavoredCourse = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const requestingUser = req.user;
-        if (!requestingUser) {
-            res.status(401).json({ error: 'Authentication required' });
-            return;
-        }
-
-        const { courseId, grpIdentifier } = req.body;
-        if (!courseId) {
-            res.status(400).json({ error: 'courseId is required' });
-            return;
-        }
-
-        const updatedUser = await UserService.addFavoredCourse(requestingUser._id, {
-            _id: courseId,
-            grpIdentifier
-        });
-
-        res.status(200).json({
-            message: 'Course added to favorites',
-            favoredCourses: updatedUser.favoredCourses
-        });
-    } catch (error) {
-        if (error instanceof UserService.UserError) {
-            if (error.message === 'User not found') {
-                res.status(404).json({ error: error.message });
-            } else {
-                res.status(400).json({ error: error.message });
-            }
-        } else {
-            console.error('Error adding course to favorites:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-};
-
-
-export const deleteFavoredCourse = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const requestingUser = req.user;
-        if (!requestingUser) {
-            res.status(401).json({ error: 'Authentication required' });
-            return;
-        }
-
-        const { courseId, grpIdentifier } = req.body;
-        if (!courseId) {
-            res.status(400).json({ error: 'courseId is required' });
-            return;
-        }
-
-        await UserService.deleteFavoredCourse(requestingUser._id, {
-            _id: courseId,
-            grpIdentifier
-        });
-
-        res.status(200).json({ message: 'Course removed from favorites' });
-    } catch (error) {
-        if (error instanceof UserService.UserError) {
-            if (error.message === 'User not found') {
-                res.status(404).json({ error: error.message });
-            } else if (error.message === 'Course not found in favorites') {
-                res.status(404).json({ error: error.message });
-            } else {
-                res.status(400).json({ error: error.message });
-            }
-        } else {
-            console.error('Error deleting favored course:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-};
-
 export const addCoursesToSchedule = async (req: Request, res: Response): Promise<void> => {
     try {
         const requestingUser = req.user;
@@ -112,7 +39,7 @@ export const addCoursesToSchedule = async (req: Request, res: Response): Promise
             return;
         }
 
-        const coursesData = req.body;
+        const coursesData: (CourseForSchedule | CourseForFavorites)[] = req.body;
         if (!Array.isArray(coursesData) || coursesData.length === 0) {
             res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
             return;
@@ -120,21 +47,23 @@ export const addCoursesToSchedule = async (req: Request, res: Response): Promise
 
         // Validate each course
         for (const courseData of coursesData) {
-            if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
-                res.status(400).json({ error: 'Each course must have _id, semester, credit, and usedInRequirements' });
-                return;
-            }
-            if (typeof courseData.credit !== 'number') {
-                res.status(400).json({ error: 'Credit must be a number for each course' });
-                return;
-            }
             if (!Array.isArray(courseData.usedInRequirements)) {
                 res.status(400).json({ error: 'usedInRequirements must be an array for each course' });
                 return;
             }
-            if (courseData.sections !== undefined && !Array.isArray(courseData.sections)) {
-                res.status(400).json({ error: 'Sections must be an array if provided for each course' });
-                return;
+            if (isCourseForSchedule(courseData)) {
+                if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
+                    res.status(400).json({ error: 'Each course must have _id, semester, credit, and usedInRequirements' });
+                    return;
+                }
+                if (typeof courseData.credit !== 'number') {
+                    res.status(400).json({ error: 'Credit must be a number for each course' });
+                    return;
+                }
+                if (courseData.sections !== undefined && !Array.isArray(courseData.sections)) {
+                    res.status(400).json({ error: 'Sections must be an array if provided for each course' });
+                    return;
+                }
             }
         }
 
@@ -142,7 +71,7 @@ export const addCoursesToSchedule = async (req: Request, res: Response): Promise
 
         res.status(200).json({
             message: 'Courses added to schedule',
-            scheduleData: updatedUser.scheduleData
+            courses: updatedUser.courses
         });
     } catch (error) {
         if (error instanceof UserService.UserError) {
@@ -160,7 +89,7 @@ export const addCoursesToSchedule = async (req: Request, res: Response): Promise
 
 
 
-export const deleteCoursesFromSchedule = async (req: Request, res: Response): Promise<void> => {
+export const removeCoursesFromSchedule = async (req: Request, res: Response): Promise<void> => {
     try {
         const requestingUser = req.user;
         if (!requestingUser) {
@@ -168,7 +97,7 @@ export const deleteCoursesFromSchedule = async (req: Request, res: Response): Pr
             return;
         }
 
-        const coursesData = req.body;
+        const coursesData: (CourseForSchedule | CourseForFavorites)[] = req.body;
         if (!Array.isArray(coursesData) || coursesData.length === 0) {
             res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
             return;
@@ -176,13 +105,19 @@ export const deleteCoursesFromSchedule = async (req: Request, res: Response): Pr
 
         // Validate each course data
         for (const courseData of coursesData) {
-            if (!courseData._id || !courseData.semester) {
-                res.status(400).json({ error: 'Each course must have _id and semester' });
+            if (!courseData._id) {
+                res.status(400).json({ error: 'Each course must have _id' });
                 return;
+            }
+            if (isCourseForSchedule(courseData)) {
+                if (!courseData.semester) {
+                    res.status(400).json({ error: 'Each course must have _id and semester' });
+                    return;
+                }
             }
         }
 
-        await UserService.deleteCoursesFromSchedule(requestingUser._id, coursesData);
+        await UserService.removeCoursesFromSchedule(requestingUser._id, coursesData);
 
         res.status(200).json({ message: 'Courses removed from schedule' });
     } catch (error) {
