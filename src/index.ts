@@ -7,6 +7,7 @@ import { userRouter } from './user/user.routes';
 import { requirementRouter } from './requirement/requirement.routes';
 import { authRouter } from './auth/auth.routes';
 import { programRouter } from './program/program.routes';
+import { userCoursesRouter } from './user-courses/user-courses.routes';
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +25,7 @@ app.use('/api/courses', courseRouter);
 app.use('/api/programs', programRouter);
 app.use('/api/requirements', requirementRouter);
 app.use('/api/users', userRouter);
+app.use('/api/my-courses', userCoursesRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
