@@ -15,7 +15,7 @@ export const getCourses = async (req: Request, res: Response): Promise<void> => 
         }
 
         const courses = await UserCoursesService.getCourses(requestingUser._id);
-        res.status(200).json(courses);
+        res.status(200).json({ message: 'Courses fetched', userCourses: courses });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
             res.status(404).json({ error: error.message });
