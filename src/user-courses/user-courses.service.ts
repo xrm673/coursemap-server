@@ -63,17 +63,27 @@ export const addCourses = async (userId: string, coursesData: (CourseForSchedule
 
         for (const courseData of coursesData) {
             if (isCourseForSchedule(courseData)) {
-                const isDuplicate = user.courses.some(course => 
-                    course.semester === courseData.semester &&
-                    course._id === courseData._id &&
-                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-                );
+                const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
+                if (isDuplicate) {
+                    const existingIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
+                    if (existingIndex !== -1) {
+                        const existing = user.courses[existingIndex];
+                        existing.semester = courseData.semester;
+                        existing.credit = courseData.credit;
+                        existing.sections = courseData.sections;
+                        if (courseData.grpIdentifier) {
+                            existing.grpIdentifier = courseData.grpIdentifier;
+                        }
+                    }
+                    continue;
+                }
                 if (!isDuplicate) {
                     const newCourse: RawUserCourse = {
                         _id: courseData._id,
+                        usedInRequirements: courseData.usedInRequirements,
                         semester: courseData.semester,
                         credit: courseData.credit,
-                        usedInRequirements: courseData.usedInRequirements
+                        sections: courseData.sections
                     };
                     if (courseData.grpIdentifier) {
                         newCourse.grpIdentifier = courseData.grpIdentifier;
@@ -82,11 +92,10 @@ export const addCourses = async (userId: string, coursesData: (CourseForSchedule
                 }
 
             } else {
-                const isDuplicate = user.courses.some(course => 
-                    course._id === courseData._id &&
-                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-                );
-
+                const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
+                if (isDuplicate) {
+                    throw new UserCoursesError(`Duplicate course found: ${courseData._id}`);
+                }
                 if (!isDuplicate) {
                     const newCourse: RawUserCourse = {
                         _id: courseData._id,
@@ -124,11 +133,7 @@ export const removeCourses = async (userId: string, coursesData: (CourseForSched
 
         for (const courseData of coursesData) {
             if (isCourseForSchedule(courseData)) {
-                const courseIndex = user.courses.findIndex(course => 
-                    course.semester === courseData.semester &&
-                    course._id === courseData._id &&
-                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-                );
+                const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
 
                 if (courseIndex === -1) {
                     notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
@@ -136,10 +141,7 @@ export const removeCourses = async (userId: string, coursesData: (CourseForSched
                     user.courses.splice(courseIndex, 1);
                 }
             } else {
-                const courseIndex = user.courses.findIndex(course => 
-                    course._id === courseData._id &&
-                    (!courseData.grpIdentifier || course.grpIdentifier === courseData.grpIdentifier)
-                );
+                const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
 
                 if (courseIndex === -1) {
                     notFoundCourses.push(`${courseData._id}`);
@@ -158,4 +160,24 @@ export const removeCourses = async (userId: string, coursesData: (CourseForSched
         console.error('Error in removeCoursesFromSchedule:', error);
         throw error;
     }
+};
+
+export const coursesMatch = (
+    rawCourse: RawUserCourse,
+    otherCourse: CourseForSchedule | CourseForFavorites
+) => {
+    const otherHasGrp = 'grpIdentifier' in otherCourse && Boolean((otherCourse as any).grpIdentifier);
+    const rawCourseHasGrp = 'grpIdentifier' in rawCourse && Boolean((rawCourse as any).grpIdentifier);
+
+    // If the incoming payload includes a grpIdentifier (topic/sectioned), require exact group match
+    if (otherHasGrp) {
+        return (
+            rawCourseHasGrp &&
+            rawCourse._id === otherCourse._id &&
+            (rawCourse as any).grpIdentifier === (otherCourse as any).grpIdentifier
+        );
+    }
+
+    // Otherwise, fall back to matching by _id (non-topic or payload lacks group info)
+    return rawCourse._id === otherCourse._id;
 };
