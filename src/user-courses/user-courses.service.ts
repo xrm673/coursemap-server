@@ -26,7 +26,8 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
                         ...matchedCourse,
                         usedInRequirements: userCourse.usedInRequirements,
                         credit: userCourse.credit,
-                        semester: userCourse.semester
+                        semester: userCourse.semester,
+                        sections: userCourse.sections
                     });
                 } else {
                     const matchedGroup = matchedCourse.enrollGroups.find(enrollGroup => enrollGroup.grpIdentifier === userCourse.grpIdentifier);

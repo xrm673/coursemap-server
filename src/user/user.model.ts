@@ -62,7 +62,7 @@ export interface CourseForFavorites extends Course {
   export interface CourseForSchedule extends CourseForFavorites {
     credit: number; // the credits gained (would gain) from this course
     semester: string; // the semester that the course is planned or taken in
-    sections?: Array<string>; // the sections of the course that the user is taking
+    sections: Array<string>; // the sections of the course that the user is taking
   }
 
 // Export database operations as functions

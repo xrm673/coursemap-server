@@ -47,15 +47,15 @@ export const addCourses = async (req: Request, res: Response): Promise<void> => 
                 return;
             }
             if (isCourseForSchedule(courseData)) {
-                if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
-                    res.status(400).json({ error: 'Each course must have _id, semester, credit, and usedInRequirements' });
+                if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements || courseData.sections === undefined) {
+                    res.status(400).json({ error: 'Each course must have _id, semester, credit, usedInRequirements, and sections' });
                     return;
                 }
                 if (typeof courseData.credit !== 'number') {
                     res.status(400).json({ error: 'Credit must be a number for each course' });
                     return;
                 }
-                if (courseData.sections !== undefined && !Array.isArray(courseData.sections)) {
+                if (!Array.isArray(courseData.sections)) {
                     res.status(400).json({ error: 'Sections must be an array if provided for each course' });
                     return;
                 }
