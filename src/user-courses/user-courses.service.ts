@@ -51,7 +51,7 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
     }
 };
 
-export const addCourses = async (userId: string, coursesData: (CourseForSchedule | CourseForFavorites)[]): Promise<User> => {
+export const addCourse = async (userId: string, courseData: CourseForSchedule | CourseForFavorites): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -62,64 +62,48 @@ export const addCourses = async (userId: string, coursesData: (CourseForSchedule
             user.courses = [];
         }
 
-        for (const courseData of coursesData) {
-            if (isCourseForSchedule(courseData)) {
-                const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
-                if (isDuplicate) {
-                    const existingIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
-                    if (existingIndex !== -1) {
-                        const existing = user.courses[existingIndex];
-                        existing.semester = courseData.semester;
-                        existing.credit = courseData.credit;
-                        existing.sections = courseData.sections;
-                        if (courseData.grpIdentifier) {
-                            existing.grpIdentifier = courseData.grpIdentifier;
-                        }
-                    }
-                    continue;
-                }
-                if (!isDuplicate) {
-                    const newCourse: RawUserCourse = {
-                        _id: courseData._id,
-                        usedInRequirements: courseData.usedInRequirements,
-                        semester: courseData.semester,
-                        credit: courseData.credit,
-                        sections: courseData.sections
-                    };
-                    if (courseData.grpIdentifier) {
-                        newCourse.grpIdentifier = courseData.grpIdentifier;
-                    }
-                    user.courses.push(newCourse);
-                }
-
-            } else {
-                const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
-                if (isDuplicate) {
-                    throw new UserCoursesError(`Duplicate course found: ${courseData._id}`);
-                }
-                if (!isDuplicate) {
-                    const newCourse: RawUserCourse = {
-                        _id: courseData._id,
-                        usedInRequirements: courseData.usedInRequirements
-                    };
-                    if (courseData.grpIdentifier) {
-                        newCourse.grpIdentifier = courseData.grpIdentifier;
-                    }
-                    user.courses.push(newCourse);
-                }
+        if (isCourseForSchedule(courseData)) {
+            const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
+            if (isDuplicate) {
+                throw new UserCoursesError(`Duplicate course found: ${courseData._id}`);
             }
+            const newCourse: RawUserCourse = {
+                _id: courseData._id,
+                usedInRequirements: courseData.usedInRequirements,
+                semester: courseData.semester,
+                credit: courseData.credit,
+                sections: courseData.sections
+            };
+            if (courseData.grpIdentifier) {
+                newCourse.grpIdentifier = courseData.grpIdentifier;
+            }
+            user.courses.push(newCourse);
+
+        } else {
+            const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
+            if (isDuplicate) {
+                throw new UserCoursesError(`Duplicate course found: ${courseData._id}`);
+            }
+            const newCourse: RawUserCourse = {
+                _id: courseData._id,
+                usedInRequirements: courseData.usedInRequirements
+            };
+            if (courseData.grpIdentifier) {
+                newCourse.grpIdentifier = courseData.grpIdentifier;
+            }
+            user.courses.push(newCourse);
         }
 
         await user.save();
         return user;
     } catch (error) {
-        console.error('Error in addCoursesToSchedule:', error);
+        console.error('Error in addCourseToSchedule:', error);
         throw error;
     }
 };
 
 
-export const removeCourses = async (userId: string, coursesData: (CourseForSchedule | CourseForFavorites)[]): Promise<void> => {
+export const removeCourse = async (userId: string, courseData: CourseForSchedule | CourseForFavorites): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -132,23 +116,21 @@ export const removeCourses = async (userId: string, coursesData: (CourseForSched
 
         let notFoundCourses: string[] = [];
 
-        for (const courseData of coursesData) {
-            if (isCourseForSchedule(courseData)) {
-                const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
+        if (isCourseForSchedule(courseData)) {
+            const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
 
-                if (courseIndex === -1) {
-                    notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
-                } else {
-                    user.courses.splice(courseIndex, 1);
-                }
+            if (courseIndex === -1) {
+                notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
             } else {
-                const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
+                user.courses.splice(courseIndex, 1);
+            }
+        } else {
+            const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
 
-                if (courseIndex === -1) {
-                    notFoundCourses.push(`${courseData._id}`);
-                } else {
-                    user.courses.splice(courseIndex, 1);
-                }
+            if (courseIndex === -1) {
+                notFoundCourses.push(`${courseData._id}`);
+            } else {
+                user.courses.splice(courseIndex, 1);
             }
         }
 

@@ -8,8 +8,8 @@ import { authenticate } from '../utils/middleware/auth.middleware';
 const userCoursesRouter = Router();
 
 userCoursesRouter.get('/', authenticate, UserCoursesController.getCourses);
-userCoursesRouter.post('/', authenticate, UserCoursesController.addCourses);
-userCoursesRouter.delete('/', authenticate, UserCoursesController.removeCourses);
+userCoursesRouter.post('/', authenticate, UserCoursesController.addCourse);
+userCoursesRouter.delete('/', authenticate, UserCoursesController.removeCourse);
 
 export { userCoursesRouter };
 
