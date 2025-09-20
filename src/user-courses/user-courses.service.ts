@@ -145,6 +145,58 @@ export const removeCourse = async (userId: string, courseData: CourseForSchedule
     }
 };
 
+export const updateCourse = async (
+    userId: string, 
+    courseId: string, 
+    grpIdentifier: string | undefined,
+    updateData: Partial<Pick<RawUserCourse, 'usedInRequirements' | 'credit' | 'semester' | 'sections'>>
+): Promise<User> => {
+    try {
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            throw new UserError('User not found');
+        }
+
+        if (!user.courses) {
+            throw new UserCoursesError('No courses found');
+        }
+
+        // Find the course to update
+        const courseIndex = user.courses.findIndex(course => {
+            if (grpIdentifier) {
+                return course._id === courseId && course.grpIdentifier === grpIdentifier;
+            }
+            return course._id === courseId;
+        });
+
+        if (courseIndex === -1) {
+            throw new UserCoursesError(`Course not found: ${courseId}${grpIdentifier ? ` (${grpIdentifier})` : ''}`);
+        }
+
+        // Update the course with provided fields
+        const courseToUpdate = user.courses[courseIndex];
+        
+        if (updateData.usedInRequirements !== undefined) {
+            courseToUpdate.usedInRequirements = updateData.usedInRequirements;
+        }
+        if (updateData.credit !== undefined) {
+            courseToUpdate.credit = updateData.credit;
+        }
+        if (updateData.semester !== undefined) {
+            courseToUpdate.semester = updateData.semester;
+        }
+        if (updateData.sections !== undefined) {
+            courseToUpdate.sections = updateData.sections;
+        }
+
+        await user.save();
+        return user;
+    } catch (error) {
+        console.error('Error in updateCourse:', error);
+        throw error;
+    }
+};
+
 export const coursesMatch = (
     rawCourse: RawUserCourse,
     otherCourse: CourseForSchedule | CourseForFavorites

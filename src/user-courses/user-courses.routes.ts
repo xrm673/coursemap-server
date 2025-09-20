@@ -9,6 +9,7 @@ const userCoursesRouter = Router();
 
 userCoursesRouter.get('/', authenticate, UserCoursesController.getCourses);
 userCoursesRouter.post('/', authenticate, UserCoursesController.addCourse);
+userCoursesRouter.put('/', authenticate, UserCoursesController.updateCourse);
 userCoursesRouter.delete('/', authenticate, UserCoursesController.removeCourse);
 
 export { userCoursesRouter };

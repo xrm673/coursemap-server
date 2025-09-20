@@ -78,6 +78,90 @@ export const addCourse = async (req: Request, res: Response): Promise<void> => {
 
 
 
+export const updateCourse = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const requestingUser = req.user;
+        if (!requestingUser) {
+            res.status(401).json({ error: 'Authentication required' });
+            return;
+        }
+
+        const { courseId, grpIdentifier, updateData } = req.body;
+
+        // Validate required fields
+        if (!courseId) {
+            res.status(400).json({ error: 'courseId is required' });
+            return;
+        }
+
+        if (!updateData || typeof updateData !== 'object') {
+            res.status(400).json({ error: 'updateData object is required' });
+            return;
+        }
+
+        // Validate updateData fields
+        const allowedFields = ['usedInRequirements', 'credit', 'semester', 'sections'];
+        const providedFields = Object.keys(updateData);
+        const invalidFields = providedFields.filter(field => !allowedFields.includes(field));
+        
+        if (invalidFields.length > 0) {
+            res.status(400).json({ 
+                error: `Invalid fields in updateData: ${invalidFields.join(', ')}. Allowed fields: ${allowedFields.join(', ')}` 
+            });
+            return;
+        }
+
+        if (providedFields.length === 0) {
+            res.status(400).json({ error: 'At least one field must be provided in updateData' });
+            return;
+        }
+
+        // Validate field types
+        if (updateData.credit !== undefined && typeof updateData.credit !== 'number') {
+            res.status(400).json({ error: 'credit must be a number' });
+            return;
+        }
+
+        if (updateData.semester !== undefined && typeof updateData.semester !== 'string') {
+            res.status(400).json({ error: 'semester must be a string' });
+            return;
+        }
+
+        if (updateData.usedInRequirements !== undefined && !Array.isArray(updateData.usedInRequirements)) {
+            res.status(400).json({ error: 'usedInRequirements must be an array' });
+            return;
+        }
+
+        if (updateData.sections !== undefined && !Array.isArray(updateData.sections)) {
+            res.status(400).json({ error: 'sections must be an array' });
+            return;
+        }
+
+        const updatedUser = await UserCoursesService.updateCourse(
+            requestingUser._id, 
+            courseId, 
+            grpIdentifier, 
+            updateData
+        );
+
+        res.status(200).json({
+            message: 'Course updated successfully',
+            courses: updatedUser.courses
+        });
+    } catch (error) {
+        if (error instanceof UserCoursesService.UserCoursesError) {
+            if (error.message.includes('not found')) {
+                res.status(404).json({ error: error.message });
+            } else {
+                res.status(400).json({ error: error.message });
+            }
+        } else {
+            console.error('Error updating course:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+};
+
 export const removeCourse = async (req: Request, res: Response): Promise<void> => {
     try {
         const requestingUser = req.user;
