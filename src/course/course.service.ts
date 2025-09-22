@@ -26,3 +26,20 @@ export const getCoursesByIds = async (courseIds: string[]): Promise<Course[]> =>
   const courses = await CourseModel.findByIds(courseIds);
   return courses;
 };
+
+export const searchCourses = async (
+  query: string, 
+  limit?: number, 
+  offset?: number
+): Promise<Course[]> => {
+  // Sanitize the query to prevent injection and ensure proper text search
+  const sanitizedQuery = query.trim();
+  if (!sanitizedQuery) {
+    return [];
+  }
+
+  const searchLimit = Math.min(limit || 20, 100); // Cap at 100 results
+  const searchOffset = Math.max(offset || 0, 0);
+
+  return await CourseModel.searchCourses(sanitizedQuery, searchLimit, searchOffset);
+};

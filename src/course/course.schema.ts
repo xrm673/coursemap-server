@@ -102,4 +102,16 @@ const CourseSchema = new Schema<Course>({
 CourseSchema.index({ ttl: 1 });  // Regular index on title
 CourseSchema.index({ "enrollGroups.grpIdentifier": 1 });  // Index on enrollment group identifiers
 
+// Text search index for course search functionality
+CourseSchema.index({ 
+  _id: "text", 
+  ttl: "text" 
+}, {
+  weights: {
+    _id: 10,    // Higher weight for exact ID matches
+    ttl: 5      // Lower weight for title matches
+  },
+  name: "course_search_text"
+});
+
 export const CourseModel = model<Course>('Course', CourseSchema, 'courses'); 

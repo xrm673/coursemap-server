@@ -178,3 +178,19 @@ export const findById = async (_id: string): Promise<Course | null> => {
 export const findByIds = async (_ids: string[]): Promise<Course[]> => {
   return await CourseModel.find({ _id: { $in: _ids } }).lean();
 };
+
+export const searchCourses = async (
+  query: string, 
+  limit: number = 20, 
+  skip: number = 0
+): Promise<Course[]> => {
+  return await CourseModel
+    .find(
+      { $text: { $search: query } },
+      { score: { $meta: "textScore" } }
+    )
+    .sort({ score: { $meta: "textScore" } })
+    .limit(limit)
+    .skip(skip)
+    .lean();
+};

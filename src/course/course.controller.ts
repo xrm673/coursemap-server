@@ -30,3 +30,34 @@ export const getCoursesByIds = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: 'Internal server error while fetching courses' });
   }
 };
+
+export const searchCourses = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { q, limit, offset } = req.query;
+    
+    if (!q || typeof q !== 'string') {
+      res.status(400).json({ error: "Query parameter 'q' is required and must be a string." });
+      return;
+    }
+
+    const parsedLimit = limit ? parseInt(limit as string, 10) : undefined;
+    const parsedOffset = offset ? parseInt(offset as string, 10) : undefined;
+
+    // Validate numeric parameters
+    if (limit && (isNaN(parsedLimit!) || parsedLimit! < 1)) {
+      res.status(400).json({ error: "Parameter 'limit' must be a positive integer." });
+      return;
+    }
+
+    if (offset && (isNaN(parsedOffset!) || parsedOffset! < 0)) {
+      res.status(400).json({ error: "Parameter 'offset' must be a non-negative integer." });
+      return;
+    }
+
+    const courses = await CourseService.searchCourses(q, parsedLimit, parsedOffset);
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error('Error searching courses:', error);
+    res.status(500).json({ error: 'Internal server error while searching courses' });
+  }
+};
