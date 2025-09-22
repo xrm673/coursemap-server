@@ -179,18 +179,29 @@ export const findByIds = async (_ids: string[]): Promise<Course[]> => {
   return await CourseModel.find({ _id: { $in: _ids } }).lean();
 };
 
-export const searchCourses = async (
-  query: string, 
-  limit: number = 20, 
-  skip: number = 0
-): Promise<Course[]> => {
-  return await CourseModel
-    .find(
-      { $text: { $search: query } },
-      { score: { $meta: "textScore" } }
-    )
-    .sort({ score: { $meta: "textScore" } })
-    .limit(limit)
-    .skip(skip)
-    .lean();
-};
+export async function searchCourses(query: string, limit = 20, skip = 0) {
+  const regex = new RegExp(query, "i"); // case-insensitive substring
+
+  const pipeline = [
+    {
+      $match: {
+        $or: [
+          { _id: { $regex: regex } },                // substring in _id
+          { $text: { $search: query } }              // full-text in ttl
+        ]
+      }
+    },
+    {
+      $addFields: {
+        score: { $meta: "textScore" },
+        idMatch: { $cond: [{ $regexMatch: { input: "$_id", regex: regex } }, 1, 0] }
+      }
+    },
+    { $sort: { idMatch: -1 as const, score: { $meta: "textScore" } as const } }, // prioritize _id matches first
+    { $skip: skip },
+    { $limit: limit },
+    { $project: { _id: 1, ttl: 1, score: 1, idMatch: 1 } }
+  ];
+
+  return await CourseModel.aggregate(pipeline).exec();
+}
