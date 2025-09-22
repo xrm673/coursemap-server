@@ -197,10 +197,10 @@ export async function searchCourses(query: string, limit = 20, skip = 0) {
         idMatch: { $cond: [{ $regexMatch: { input: "$_id", regex: regex } }, 1, 0] }
       }
     },
-    { $sort: { idMatch: -1 as const, score: { $meta: "textScore" } as const } }, // prioritize _id matches first
+    { $sort: { idMatch: -1 as const, _id: 1 as const, score: { $meta: "textScore" } as const } }, // sort by relevance first, then by _id
     { $skip: skip },
     { $limit: limit },
-    { $project: { _id: 1, ttl: 1, score: 1, idMatch: 1 } }
+    { $project: { score: 0, idMatch: 0 } } // Remove only the helper fields, keep everything else
   ];
 
   return await CourseModel.aggregate(pipeline).exec();
