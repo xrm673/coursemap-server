@@ -39,7 +39,7 @@ const startServer = async () => {
     await mongoose.connect(process.env.MONGODB_URI!, {
       serverApi: {
         version: '1',
-        strict: true,
+        strict: false,
         deprecationErrors: true,
       }
     });
