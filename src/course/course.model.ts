@@ -15,19 +15,15 @@ export interface Course {
   courseHasTopic?: boolean; // true if the course has topic
   dsrpn: string; // description
   otcm?: Array<string>; // outcomes of the course
-  distr?: Array<string>; // distribution categories
+  attr?: Array<string>; // attributes of the course
+  distr: Array<string>; // distribution categories
   metadata: {
-    when?: Array<string>; // when (semester category) the course is offered, not accurate
-    breadth?: string; // breadth category
-    attr?: Array<string>; // attributes
+    lastOffered?: Array<string>; // last four terms the course is offered
     fee?: string; // course fee
-    satisfies?: string; // satisfies requirement
-    subfield?: string;
     career?: string;
     acadgrp?: string;
   }
   eligibility: {
-    cmts?: string; // comments
     rcmdReq?: string; //recommend Prerequisite or Corequisite requirement in text
     req?: string; // Prerequisite, Corequisite, or PreCoRequisite in text
     prereq?: Array<{
@@ -40,7 +36,6 @@ export interface Course {
       courses: Array<string>;
     }>;
     needNote?: boolean; // true if the course needs a note for prereq/coreq/preco
-    lanreq?: string; // language requirement
     ovlpText?: string; // original text of overlap courses
     ovlp?: Array<string>; // overlap courses
     pmsn?: string; // enrollment permission requirement
