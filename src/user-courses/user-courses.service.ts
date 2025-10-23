@@ -38,7 +38,8 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
                             grpIdentifier: userCourse.grpIdentifier,
                             usedInRequirements: userCourse.usedInRequirements,
                             credit: userCourse.credit,
-                            semester: userCourse.semester
+                            semester: userCourse.semester,
+                            sections: userCourse.sections
                         });
                     }
                 }
