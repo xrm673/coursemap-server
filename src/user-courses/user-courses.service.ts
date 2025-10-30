@@ -177,16 +177,24 @@ export const updateCourse = async (
         // Update the course with provided fields
         const courseToUpdate = user.courses[courseIndex];
         
-        if (updateData.usedInRequirements !== undefined) {
-            courseToUpdate.usedInRequirements = updateData.usedInRequirements;
+        if ('usedInRequirements' in updateData) {
+            courseToUpdate.usedInRequirements = updateData.usedInRequirements || [];
         }
-        if (updateData.credit !== undefined) {
-            courseToUpdate.credit = updateData.credit;
+        if ('credit' in updateData) {
+            if (updateData.credit === undefined) {
+                courseToUpdate.credit = undefined;  // or delete courseToUpdate.credit;
+            } else {
+                courseToUpdate.credit = updateData.credit;
+            }
         }
-        if (updateData.semester !== undefined) {
-            courseToUpdate.semester = updateData.semester;
+        if ('semester' in updateData) {
+            if (updateData.semester === undefined) {
+                courseToUpdate.semester = undefined;  // or delete courseToUpdate.semester;
+            } else {
+                courseToUpdate.semester = updateData.semester;
+            }
         }
-        if (updateData.sections !== undefined) {
+        if ('sections' in updateData) {
             courseToUpdate.sections = updateData.sections;
         }
 
