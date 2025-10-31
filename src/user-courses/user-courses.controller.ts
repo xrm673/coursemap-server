@@ -219,6 +219,8 @@ export const removeCourseFromSchedule = async (req: Request, res: Response): Pro
             return;
         }
 
+        console.log('courseData', courseData);
+
         if (!isCourseForSchedule(courseData)) {
             res.status(400).json({ error: 'Course must be a schedule course' });
             return;
@@ -232,7 +234,15 @@ export const removeCourseFromSchedule = async (req: Request, res: Response): Pro
 
         await UserCoursesService.removeCourseFromSchedule(requestingUser._id, courseData);
 
-        res.status(200).json({ message: 'Course removed from schedule' });
+        // Get the updated user courses to return to frontend
+        const updatedCourses = await UserCoursesService.getCourses(requestingUser._id);
+
+        console.log('updatedCourses', updatedCourses);
+
+        res.status(200).json({ 
+            message: 'Course removed from schedule',
+            newUserCourses: updatedCourses
+        });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
             if (error.message.includes('not found in schedule')) {

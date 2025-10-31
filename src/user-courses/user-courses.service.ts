@@ -219,7 +219,8 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
 
         // Remove schedule-specific fields to convert CourseForSchedule to CourseForFavorites
         const courseToUpdate = user.courses[courseIndex];
-        
+
+        console.log('courseToUpdate', courseToUpdate);
         // Remove the fields that make it a CourseForSchedule
         delete courseToUpdate.credit;
         delete courseToUpdate.semester;

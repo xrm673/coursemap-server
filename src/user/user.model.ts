@@ -87,6 +87,7 @@ export const updateUserLastLogin = async (userId: string): Promise<void> => {
 };
 
 export const isCourseForSchedule = (course: CourseForFavorites | CourseForSchedule): course is CourseForSchedule => {
+    console.log('course', course);
     return 'semester' in course && 'credit' in course;
   }
 
