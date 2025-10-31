@@ -218,13 +218,24 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
         }
 
         // Remove schedule-specific fields to convert CourseForSchedule to CourseForFavorites
-        const courseToUpdate = user.courses[courseIndex];
+        const originalCourse = user.courses[courseIndex];
 
-        console.log('courseToUpdate', courseToUpdate);
-        // Remove the fields that make it a CourseForSchedule
-        delete courseToUpdate.credit;
-        delete courseToUpdate.semester;
-        delete courseToUpdate.sections;
+        console.log('originalCourse before:', originalCourse);
+        
+        // Rebuild the course object without the schedule-specific fields
+        const updatedCourse: RawUserCourse = {
+            _id: originalCourse._id,
+            grpIdentifier: originalCourse.grpIdentifier,
+            usedInRequirements: originalCourse.usedInRequirements
+        };
+        
+        // Replace the course in the array
+        user.courses[courseIndex] = updatedCourse;
+        
+        // Mark the courses array as modified so Mongoose knows to save the changes
+        user.markModified('courses');
+        
+        console.log('updatedCourse after:', updatedCourse);
 
         // Save the updated user
         const updatedUser = await user.save();
