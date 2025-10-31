@@ -219,8 +219,6 @@ export const removeCourseFromSchedule = async (req: Request, res: Response): Pro
             return;
         }
 
-        console.log('courseData', courseData);
-
         if (!isCourseForSchedule(courseData)) {
             res.status(400).json({ error: 'Course must be a schedule course' });
             return;
@@ -233,8 +231,6 @@ export const removeCourseFromSchedule = async (req: Request, res: Response): Pro
         }
 
         const updatedUser = await UserCoursesService.removeCourseFromSchedule(requestingUser._id, courseData);
-
-        console.log('updatedUser', updatedUser.courses);
 
         res.status(200).json({ 
             message: 'Course removed from schedule',
