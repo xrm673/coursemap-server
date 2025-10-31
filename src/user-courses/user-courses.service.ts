@@ -198,7 +198,7 @@ export const updateCourse = async (
     }
 };
 
-export const removeCourseFromSchedule = async (userId: string, courseData: CourseForSchedule): Promise<void> => {
+export const removeCourseFromSchedule = async (userId: string, courseData: CourseForSchedule): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -227,7 +227,8 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
         delete courseToUpdate.sections;
 
         // Save the updated user
-        await user.save();
+        const updatedUser = await user.save();
+        return updatedUser;
         
     }
     catch (error) {

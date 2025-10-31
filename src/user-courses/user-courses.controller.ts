@@ -232,16 +232,13 @@ export const removeCourseFromSchedule = async (req: Request, res: Response): Pro
             return;
         }
 
-        await UserCoursesService.removeCourseFromSchedule(requestingUser._id, courseData);
+        const updatedUser = await UserCoursesService.removeCourseFromSchedule(requestingUser._id, courseData);
 
-        // Get the updated user courses to return to frontend
-        const updatedCourses = await UserCoursesService.getCourses(requestingUser._id);
-
-        console.log('updatedCourses', updatedCourses);
+        console.log('updatedUser', updatedUser.courses);
 
         res.status(200).json({ 
             message: 'Course removed from schedule',
-            newUserCourses: updatedCourses
+            newUserCourses: updatedUser.courses
         });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
