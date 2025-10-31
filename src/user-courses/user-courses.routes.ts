@@ -10,7 +10,8 @@ const userCoursesRouter = Router();
 userCoursesRouter.get('/', authenticate, UserCoursesController.getCourses);
 userCoursesRouter.post('/', authenticate, UserCoursesController.addCourse);
 userCoursesRouter.put('/', authenticate, UserCoursesController.updateCourse);
-userCoursesRouter.delete('/', authenticate, UserCoursesController.removeCourse);
+userCoursesRouter.delete('/', authenticate, UserCoursesController.deleteCourse);
+userCoursesRouter.post('/remove-from-schedule', authenticate, UserCoursesController.removeCourseFromSchedule);
 
 export { userCoursesRouter };
 

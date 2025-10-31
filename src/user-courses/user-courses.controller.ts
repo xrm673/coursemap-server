@@ -117,13 +117,13 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
         }
 
         // Validate field types
-        if (updateData.credit !== undefined && typeof updateData.credit !== 'number') {
-            res.status(400).json({ error: 'credit must be a number' });
+        if (updateData.credit !== undefined && updateData.credit !== null && typeof updateData.credit !== 'number') {
+            res.status(400).json({ error: 'credit must be a number or null' });
             return;
         }
 
-        if (updateData.semester !== undefined && typeof updateData.semester !== 'string') {
-            res.status(400).json({ error: 'semester must be a string' });
+        if (updateData.semester !== undefined && updateData.semester !== null && typeof updateData.semester !== 'string') {
+            res.status(400).json({ error: 'semester must be a string or null' });
             return;
         }
 
@@ -162,7 +162,7 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-export const removeCourse = async (req: Request, res: Response): Promise<void> => {
+export const deleteCourse = async (req: Request, res: Response): Promise<void> => {
     try {
         const requestingUser = req.user;
         if (!requestingUser) {
@@ -188,9 +188,51 @@ export const removeCourse = async (req: Request, res: Response): Promise<void> =
             }
         }
 
-        await UserCoursesService.removeCourse(requestingUser._id, courseData);
+        await UserCoursesService.deleteCourse(requestingUser._id, courseData);
 
-        res.status(200).json({ message: 'Courses removed from schedule' });
+        res.status(200).json({ message: 'Course deleted from schedule' });
+    } catch (error) {
+        if (error instanceof UserCoursesService.UserCoursesError) {
+            if (error.message.includes('not found in schedule')) {
+                res.status(404).json({ error: error.message });
+            } else {
+                res.status(400).json({ error: error.message });
+            }
+        } else {
+            console.error('Error deleting course from schedule:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+};
+
+export const removeCourseFromSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const requestingUser = req.user;
+        if (!requestingUser) {
+            res.status(401).json({ error: 'Authentication required' });
+            return;
+        }
+
+        const courseData: CourseForSchedule = req.body;
+        if (!courseData) {
+            res.status(400).json({ error: 'Request body must be a non-empty schedule course object' });
+            return;
+        }
+
+        if (!isCourseForSchedule(courseData)) {
+            res.status(400).json({ error: 'Course must be a schedule course' });
+            return;
+        }
+
+        // Validate each course data
+        if (!courseData._id) {
+            res.status(400).json({ error: 'Schedule course must have _id' });
+            return;
+        }
+
+        await UserCoursesService.removeCourseFromSchedule(requestingUser._id, courseData);
+
+        res.status(200).json({ message: 'Course removed from schedule' });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
             if (error.message.includes('not found in schedule')) {

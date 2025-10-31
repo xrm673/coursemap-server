@@ -104,7 +104,7 @@ export const addCourse = async (userId: string, courseData: CourseForSchedule | 
 };
 
 
-export const removeCourse = async (userId: string, courseData: CourseForSchedule | CourseForFavorites): Promise<void> => {
+export const deleteCourse = async (userId: string, courseData: CourseForSchedule | CourseForFavorites): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -141,7 +141,7 @@ export const removeCourse = async (userId: string, courseData: CourseForSchedule
 
         await user.save();
     } catch (error) {
-        console.error('Error in removeCoursesFromSchedule:', error);
+        console.error('Error in deleteCoursesFromSchedule:', error);
         throw error;
     }
 };
@@ -181,18 +181,10 @@ export const updateCourse = async (
             courseToUpdate.usedInRequirements = updateData.usedInRequirements || [];
         }
         if ('credit' in updateData) {
-            if (updateData.credit === undefined) {
-                courseToUpdate.credit = undefined;  // or delete courseToUpdate.credit;
-            } else {
-                courseToUpdate.credit = updateData.credit;
-            }
+            courseToUpdate.credit = updateData.credit === null ? undefined : updateData.credit;
         }
         if ('semester' in updateData) {
-            if (updateData.semester === undefined) {
-                courseToUpdate.semester = undefined;  // or delete courseToUpdate.semester;
-            } else {
-                courseToUpdate.semester = updateData.semester;
-            }
+            courseToUpdate.semester = updateData.semester === null ? undefined : updateData.semester;
         }
         if ('sections' in updateData) {
             courseToUpdate.sections = updateData.sections;
@@ -202,6 +194,43 @@ export const updateCourse = async (
         return user;
     } catch (error) {
         console.error('Error in updateCourse:', error);
+        throw error;
+    }
+};
+
+export const removeCourseFromSchedule = async (userId: string, courseData: CourseForSchedule): Promise<void> => {
+    try {
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            throw new UserError('User not found');
+        }
+
+        // Find the course to update
+        const courseIndex = user.courses.findIndex(course => {
+            if (courseData.grpIdentifier) {
+                return course._id === courseData._id && course.grpIdentifier === courseData.grpIdentifier;
+            }
+            return course._id === courseData._id;
+        });
+
+        if (courseIndex === -1) {
+            throw new UserCoursesError(`Course not found: ${courseData._id}${courseData.grpIdentifier ? ` (${courseData.grpIdentifier})` : ''}`);
+        }
+
+        // Remove schedule-specific fields to convert CourseForSchedule to CourseForFavorites
+        const courseToUpdate = user.courses[courseIndex];
+        
+        // Remove the fields that make it a CourseForSchedule
+        delete courseToUpdate.credit;
+        delete courseToUpdate.semester;
+        delete courseToUpdate.sections;
+
+        // Save the updated user
+        await user.save();
+        
+    }
+    catch (error) {
+        console.error('Error in removeCourseFromSchedule:', error);
         throw error;
     }
 };
