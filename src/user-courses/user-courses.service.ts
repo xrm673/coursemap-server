@@ -25,6 +25,7 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
                     processedCourses.push({
                         ...matchedCourse,
                         usedInRequirements: userCourse.usedInRequirements,
+                        considered: userCourse.considered,
                         credit: userCourse.credit,
                         semester: userCourse.semester,
                         sections: userCourse.sections
@@ -36,6 +37,7 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
                             ...matchedCourse,
                             enrollGroups: [matchedGroup],
                             grpIdentifier: userCourse.grpIdentifier,
+                            considered: userCourse.considered,
                             usedInRequirements: userCourse.usedInRequirements,
                             credit: userCourse.credit,
                             semester: userCourse.semester,
@@ -71,6 +73,7 @@ export const addCourse = async (userId: string, courseData: CourseForSchedule | 
             const newCourse: RawUserCourse = {
                 _id: courseData._id,
                 usedInRequirements: courseData.usedInRequirements,
+                considered: courseData.considered,
                 semester: courseData.semester,
                 credit: courseData.credit,
                 sections: courseData.sections
@@ -87,7 +90,8 @@ export const addCourse = async (userId: string, courseData: CourseForSchedule | 
             }
             const newCourse: RawUserCourse = {
                 _id: courseData._id,
-                usedInRequirements: courseData.usedInRequirements
+                usedInRequirements: courseData.usedInRequirements,
+                considered: courseData.considered,
             };
             if (courseData.grpIdentifier) {
                 newCourse.grpIdentifier = courseData.grpIdentifier;
@@ -150,7 +154,7 @@ export const updateCourse = async (
     userId: string, 
     courseId: string, 
     grpIdentifier: string | undefined,
-    updateData: Partial<Pick<RawUserCourse, 'usedInRequirements' | 'credit' | 'semester' | 'sections'>>
+    updateData: Partial<Pick<RawUserCourse, 'usedInRequirements' | 'considered' | 'credit' | 'semester' | 'sections'>>
 ): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
@@ -179,6 +183,9 @@ export const updateCourse = async (
         
         if ('usedInRequirements' in updateData) {
             courseToUpdate.usedInRequirements = updateData.usedInRequirements || [];
+        }
+        if (updateData.considered !== undefined && updateData.considered !== null) {
+            courseToUpdate.considered = updateData.considered;
         }
         if ('credit' in updateData) {
             courseToUpdate.credit = updateData.credit === null ? undefined : updateData.credit;
@@ -224,7 +231,8 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
         const updatedCourse: RawUserCourse = {
             _id: originalCourse._id,
             grpIdentifier: originalCourse.grpIdentifier,
-            usedInRequirements: originalCourse.usedInRequirements
+            usedInRequirements: originalCourse.usedInRequirements,
+            considered: originalCourse.considered,
         };
         
         // Replace the course in the array

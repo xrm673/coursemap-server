@@ -42,8 +42,12 @@ export const addCourse = async (req: Request, res: Response): Promise<void> => {
 
         // Validate each course
         if (isCourseForSchedule(courseData)) {
-            if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements || courseData.sections === undefined) {
-                res.status(400).json({ error: 'Each course must have _id, semester, credit, usedInRequirements, and sections' });
+            if (!courseData._id || courseData.considered === undefined || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements || courseData.sections === undefined) {
+                res.status(400).json({ error: 'Each course must have _id, considered, semester, credit, usedInRequirements, and sections' });
+                return;
+            }
+            if (typeof courseData.considered !== 'boolean') {
+                res.status(400).json({ error: 'Considered must be a boolean for each course' });
                 return;
             }
             if (typeof courseData.credit !== 'number') {
@@ -100,7 +104,7 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
         }
 
         // Validate updateData fields
-        const allowedFields = ['usedInRequirements', 'credit', 'semester', 'sections'];
+        const allowedFields = ['usedInRequirements', 'considered', 'credit', 'semester', 'sections'];
         const providedFields = Object.keys(updateData);
         const invalidFields = providedFields.filter(field => !allowedFields.includes(field));
         
@@ -117,6 +121,11 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
         }
 
         // Validate field types
+        if (updateData.considered !== undefined && typeof updateData.considered !== 'boolean') {
+            res.status(400).json({ error: 'considered must be a boolean' });
+            return;
+        }
+
         if (updateData.credit !== undefined && updateData.credit !== null && typeof updateData.credit !== 'number') {
             res.status(400).json({ error: 'credit must be a number or null' });
             return;
