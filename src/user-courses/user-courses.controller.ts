@@ -34,37 +34,37 @@ export const addCourse = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const courseData: CourseForSchedule | CourseForFavorites = req.body;
+        const {courseData, usedInRequirements, semester} = req.body;
         if (!courseData) {
             res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
             return;
         }
 
-        // Validate each course
-        if (isCourseForSchedule(courseData)) {
-            if (!courseData._id || courseData.considered === undefined || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements || courseData.sections === undefined) {
-                res.status(400).json({ error: 'Each course must have _id, considered, semester, credit, usedInRequirements, and sections' });
-                return;
-            }
-            if (typeof courseData.considered !== 'boolean') {
-                res.status(400).json({ error: 'Considered must be a boolean for each course' });
-                return;
-            }
-            if (typeof courseData.credit !== 'number') {
-                res.status(400).json({ error: 'Credit must be a number for each course' });
-                return;
-            }
-            if (!Array.isArray(courseData.sections)) {
-                res.status(400).json({ error: 'Sections must be an array if provided for each course' });
-                return;
-            }
+        // Validate course
+        if (!courseData._id) {
+            res.status(400).json({ error: 'Course must have _id' });
+            return;
+        }
+        if (!Array.isArray(usedInRequirements)) {
+            res.status(400).json({ error: 'usedInRequirements must be an array' });
+            return;
         }
 
-        const updatedUser = await UserCoursesService.addCourse(requestingUser._id, courseData);
+        let updatedUserCourses: (CourseForSchedule | CourseForFavorites)[] | undefined;
+
+        if (semester) {
+            if (typeof semester !== 'string') {
+                res.status(400).json({ error: 'Semester must be a string' });
+                return;
+            }
+            updatedUserCourses = await UserCoursesService.addCourseToSchedule(requestingUser._id, courseData, semester, usedInRequirements);
+        } else {
+            updatedUserCourses = await UserCoursesService.saveCourse(requestingUser._id, courseData, usedInRequirements);
+        }
 
         res.status(200).json({
             message: 'Courses added to schedule',
-            courses: updatedUser.courses
+            courses: updatedUserCourses
         });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
@@ -104,7 +104,7 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
         }
 
         // Validate updateData fields
-        const allowedFields = ['usedInRequirements', 'considered', 'credit', 'semester', 'sections'];
+        const allowedFields = ['usedInRequirements', 'credit', 'semester', 'sections'];
         const providedFields = Object.keys(updateData);
         const invalidFields = providedFields.filter(field => !allowedFields.includes(field));
         
@@ -121,11 +121,6 @@ export const updateCourse = async (req: Request, res: Response): Promise<void> =
         }
 
         // Validate field types
-        if (updateData.considered !== undefined && typeof updateData.considered !== 'boolean') {
-            res.status(400).json({ error: 'considered must be a boolean' });
-            return;
-        }
-
         if (updateData.credit !== undefined && updateData.credit !== null && typeof updateData.credit !== 'number') {
             res.status(400).json({ error: 'credit must be a number or null' });
             return;

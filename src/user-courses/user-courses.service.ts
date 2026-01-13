@@ -1,6 +1,7 @@
 import * as UserModel from '../user/user.model';
 import * as CourseModel from '../course/course.model';
 import { User, RawUserCourse, CourseForFavorites, CourseForSchedule, isCourseForSchedule } from '../user/user.model';
+import { Course, CourseForRequirement, Section } from '../course/course.model';
 import { UserError } from '../user/user.service';
 
 export class UserCoursesError extends Error {
@@ -17,44 +18,19 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
             throw new UserError('User not found');
         }
         const coursesData = await CourseModel.findByIds(user.courses.map(course => course._id));
-        const processedCourses: (CourseForFavorites | CourseForSchedule)[] = [];
-        for (const userCourse of user.courses) {
-            const matchedCourse = coursesData.find(course => course._id === userCourse._id);
-            if (matchedCourse) {
-                if (!userCourse.grpIdentifier) {
-                    processedCourses.push({
-                        ...matchedCourse,
-                        usedInRequirements: userCourse.usedInRequirements,
-                        considered: userCourse.considered,
-                        credit: userCourse.credit,
-                        semester: userCourse.semester,
-                        sections: userCourse.sections
-                    });
-                } else {
-                    const matchedGroup = matchedCourse.enrollGroups.find(enrollGroup => enrollGroup.grpIdentifier === userCourse.grpIdentifier);
-                    if (matchedGroup) {
-                        processedCourses.push({
-                            ...matchedCourse,
-                            enrollGroups: [matchedGroup],
-                            grpIdentifier: userCourse.grpIdentifier,
-                            considered: userCourse.considered,
-                            usedInRequirements: userCourse.usedInRequirements,
-                            credit: userCourse.credit,
-                            semester: userCourse.semester,
-                            sections: userCourse.sections
-                        });
-                    }
-                }
-            }
-        }
-        return processedCourses;
+        return processCourses(user.courses, coursesData);
     } catch (error) {
         console.error('Error in getCourses:', error);
         throw error;
     }
 };
 
-export const addCourse = async (userId: string, courseData: CourseForSchedule | CourseForFavorites): Promise<User> => {
+export const addCourseToSchedule = async (
+    userId: string, 
+    courseData: CourseForRequirement, 
+    semester: string, 
+    usedInRequirements: string[]
+): Promise<(CourseForSchedule | CourseForFavorites)[]> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -65,44 +41,96 @@ export const addCourse = async (userId: string, courseData: CourseForSchedule | 
             user.courses = [];
         }
 
-        if (isCourseForSchedule(courseData)) {
-            const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
-            if (isDuplicate) {
-                throw new UserCoursesError(`Duplicate course found: ${courseData._id}`);
-            }
-            const newCourse: RawUserCourse = {
-                _id: courseData._id,
-                usedInRequirements: courseData.usedInRequirements,
-                considered: courseData.considered,
-                semester: courseData.semester,
-                credit: courseData.credit,
-                sections: courseData.sections
-            };
-            if (courseData.grpIdentifier) {
-                newCourse.grpIdentifier = courseData.grpIdentifier;
-            }
-            user.courses.push(newCourse);
+        const coursesData = await CourseModel.findByIds(user.courses.map(course => course._id));
+        const originalUserCourses = processCourses(user.courses, coursesData);
 
-        } else {
-            const isDuplicate = user.courses.some(course => coursesMatch(course, courseData));
-            if (isDuplicate) {
-                throw new UserCoursesError(`Duplicate course found: ${courseData._id}`);
+        const existingCourse = user.courses.find(course => 
+            course._id === courseData._id && course.grpIdentifier === courseData.grpIdentifier
+        );
+
+        if (existingCourse) {
+            existingCourse.semester = semester;
+            await user.save();
+            
+            const processed = originalUserCourses.find(c => 
+                c._id === courseData._id && (c as any).grpIdentifier === courseData.grpIdentifier
+            );
+            if (processed) {
+                (processed as any).semester = semester;
             }
-            const newCourse: RawUserCourse = {
-                _id: courseData._id,
-                usedInRequirements: courseData.usedInRequirements,
-                considered: courseData.considered,
-            };
-            if (courseData.grpIdentifier) {
-                newCourse.grpIdentifier = courseData.grpIdentifier;
-            }
-            user.courses.push(newCourse);
+            return originalUserCourses;
         }
 
+        // course not exists, add it to the schedule
+        const newRawCourse: RawUserCourse = {
+            _id: courseData._id,
+            usedInRequirements: usedInRequirements,
+            semester: semester,
+            credit: courseData.enrollGroups[0].credits[0],
+            sections: generateCourseSections(courseData, semester, originalUserCourses)
+        };
+        if (courseData.grpIdentifier) {
+            newRawCourse.grpIdentifier = courseData.grpIdentifier;
+        }
+        user.courses.push(newRawCourse);
         await user.save();
-        return user;
+        
+        const processedNewCourse = processCourse(newRawCourse, courseData);
+        if (processedNewCourse) {
+            originalUserCourses.push(processedNewCourse);
+        }
+        
+        return originalUserCourses;
     } catch (error) {
         console.error('Error in addCourseToSchedule:', error);
+        throw error;
+    }
+};
+
+export const saveCourse = async (
+    userId: string, 
+    courseData: CourseForRequirement, 
+    usedInRequirements: string[]
+): Promise<(CourseForSchedule | CourseForFavorites)[]> => {
+    try {
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            throw new UserError('User not found');
+        }
+
+        if (!user.courses) {
+            user.courses = [];
+        }
+
+        const coursesData = await CourseModel.findByIds(user.courses.map(course => course._id));
+        const originalUserCourses = processCourses(user.courses, coursesData);
+
+        const existingCourse = user.courses.find(course => 
+            course._id === courseData._id && course.grpIdentifier === courseData.grpIdentifier
+        );
+        if (existingCourse) {           
+            return originalUserCourses;
+        }
+
+        // course not exists, add it to the schedule
+        const newRawCourse: RawUserCourse = {
+            _id: courseData._id,
+            usedInRequirements: usedInRequirements,
+        };
+        if (courseData.grpIdentifier) {
+            newRawCourse.grpIdentifier = courseData.grpIdentifier;
+        }
+        user.courses.push(newRawCourse);
+        await user.save();
+        
+        const processedNewCourse = processCourse(newRawCourse, courseData);
+        if (processedNewCourse) {
+            originalUserCourses.push(processedNewCourse);
+        }
+        
+        return originalUserCourses;
+    } catch (error) {
+        console.error('Error in saveCourse:', error);
         throw error;
     }
 };
@@ -154,7 +182,7 @@ export const updateCourse = async (
     userId: string, 
     courseId: string, 
     grpIdentifier: string | undefined,
-    updateData: Partial<Pick<RawUserCourse, 'usedInRequirements' | 'considered' | 'credit' | 'semester' | 'sections'>>
+    updateData: Partial<Pick<RawUserCourse, 'usedInRequirements' | 'credit' | 'semester' | 'sections'>>
 ): Promise<User> => {
     try {
         const user = await UserModel.findById(userId);
@@ -183,9 +211,6 @@ export const updateCourse = async (
         
         if ('usedInRequirements' in updateData) {
             courseToUpdate.usedInRequirements = updateData.usedInRequirements || [];
-        }
-        if (updateData.considered !== undefined && updateData.considered !== null) {
-            courseToUpdate.considered = updateData.considered;
         }
         if ('credit' in updateData) {
             courseToUpdate.credit = updateData.credit === null ? undefined : updateData.credit;
@@ -232,7 +257,6 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
             _id: originalCourse._id,
             grpIdentifier: originalCourse.grpIdentifier,
             usedInRequirements: originalCourse.usedInRequirements,
-            considered: originalCourse.considered,
         };
         
         // Replace the course in the array
@@ -271,3 +295,120 @@ export const coursesMatch = (
     // Otherwise, fall back to matching by _id (non-topic or payload lacks group info)
     return rawCourse._id === otherCourse._id;
 };
+
+export const getUserCoursesInSemester = (userCourses: (CourseForSchedule | CourseForFavorites)[], semester: string) : (CourseForSchedule)[] => {
+    return userCourses.filter(course => isCourseForSchedule(course) && course.semester === semester) as CourseForSchedule[];
+}
+
+// return all meeting times of the user courses in the semester
+export const getUserSectionsInSemester = (userCoursesInSemester: CourseForSchedule[], semester: string) : Section[] => {
+    const sections = new Set<Section>();
+    for (const course of userCoursesInSemester) {
+        for (const enrollGroup of course.enrollGroups) {
+        for (const section of enrollGroup.sections || []) {
+            const sectionId = `${section.type}-${section.nbr}`;
+            if (section.semester === semester && course.sections.includes(sectionId)) {
+            sections.add(section);
+            }
+        }
+        }
+    }
+    return Array.from(sections);
+}
+
+export const areSectionsOverlap = (section1: Section, section2: Section) => {
+    return false;
+}
+
+export const generateCourseSections = (course: Course, semester: string, userCourses: (CourseForSchedule | CourseForFavorites)[]) => {
+    if (semester === 'unspecified') {
+      return [];
+    }
+    let foundAvailableSections = false;
+    // find userCourses and userSections
+    const userCoursesInSemester = getUserCoursesInSemester(userCourses, semester);
+    const userSectionsInSemester = getUserSectionsInSemester(userCoursesInSemester, semester);
+  
+    let newSections: string[] = [];
+    // for each enroll group
+    for (const enrollGroup of course.enrollGroups) {
+      if (foundAvailableSections) {
+        break;
+      }
+      let components = enrollGroup.components;
+      for (const section of enrollGroup.sections || []) {
+        if (section.semester === semester && section.type in components) {
+          let sectionAvailable = false;
+          for (const userSection of userSectionsInSemester) {
+            if (!areSectionsOverlap(section, userSection)) {
+              sectionAvailable = true;
+              const newSectionId = `${section.type}-${section.nbr}`;
+              newSections.push(newSectionId);
+              components = components.filter(component => component !== section.type);
+              break;
+            }
+          }
+        }
+      }
+      if (components.length === 0) {
+        foundAvailableSections = true;
+        break;
+      }
+    }
+    // if not found available sections in all enroll groups, find sections in the first enroll group
+    if (!foundAvailableSections) {
+      let enrollGroup = course.enrollGroups[0];
+      let components = enrollGroup.components;
+      for (const component of components) {
+        for (const section of enrollGroup.sections || []) {
+          if (section.semester === semester && section.type === component) {
+            const newSectionId = `${component}-${section.nbr}`;
+            newSections.push(newSectionId);
+            components = components.filter(comp => comp !== section.type);
+            break;
+          }
+        }
+      }
+    }
+    return newSections;
+  }
+
+const processCourse = (userCourse: RawUserCourse, matchedCourse: Course | undefined): CourseForFavorites | CourseForSchedule | null => {
+    if (!matchedCourse) return null;
+
+    if (!userCourse.grpIdentifier) {
+        return {
+            ...matchedCourse,
+            usedInRequirements: userCourse.usedInRequirements,
+            credit: userCourse.credit,
+            semester: userCourse.semester,
+            sections: userCourse.sections
+        };
+    } else {
+        const matchedGroup = matchedCourse.enrollGroups.find(enrollGroup => enrollGroup.grpIdentifier === userCourse.grpIdentifier);
+        if (matchedGroup) {
+            return {
+                ...matchedCourse,
+                enrollGroups: [matchedGroup],
+                grpIdentifier: userCourse.grpIdentifier,
+                usedInRequirements: userCourse.usedInRequirements,
+                credit: userCourse.credit,
+                semester: userCourse.semester,
+                sections: userCourse.sections
+            };
+        }
+    }
+    return null;
+}
+
+const processCourses = (rawUserCourses: RawUserCourse[], coursesData: Course[]) => {
+    const processedCourses: (CourseForFavorites | CourseForSchedule)[] = [];
+    for (const userCourse of rawUserCourses) {
+        const matchedCourse = coursesData.find(course => course._id === userCourse._id);
+        const processed = processCourse(userCourse, matchedCourse);
+        if (processed) {
+            processedCourses.push(processed);
+        }
+    }
+    return processedCourses;
+}

@@ -48,7 +48,6 @@ export interface User extends Document {
 export interface RawUserCourse {
     _id: string;
     grpIdentifier?: string;
-    considered: boolean;
     usedInRequirements: Array<string>; // list of requirements that use this course
     credit?: number; // the credits gained (would gain) from this course
     semester?: string; // the semester that the course is planned or taken in
@@ -58,7 +57,6 @@ export interface RawUserCourse {
 export interface CourseForFavorites extends Course {
     grpIdentifier?: string;
     usedInRequirements: Array<string>; // list of requirements that use this course
-    considered: boolean;
   }
   
   export interface CourseForSchedule extends CourseForFavorites {

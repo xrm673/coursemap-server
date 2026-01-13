@@ -60,7 +60,6 @@ export const addCoursesToSchedule = async (userId: string, coursesData: (CourseF
                 if (!isDuplicate) {
                     const newCourse: RawUserCourse = {
                         _id: courseData._id,
-                        considered: courseData.considered,
                         semester: courseData.semester,
                         credit: courseData.credit,
                         usedInRequirements: courseData.usedInRequirements
@@ -81,7 +80,6 @@ export const addCoursesToSchedule = async (userId: string, coursesData: (CourseF
                     const newCourse: RawUserCourse = {
                         _id: courseData._id,
                         usedInRequirements: courseData.usedInRequirements,
-                        considered: courseData.considered,
                     };
                     if (courseData.grpIdentifier) {
                         newCourse.grpIdentifier = courseData.grpIdentifier;

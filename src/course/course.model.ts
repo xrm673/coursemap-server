@@ -166,6 +166,21 @@ export interface NoDataCourse {
   noData: boolean;
 }
 
+export interface CourseForSearch extends Course {
+  grpIdentifier?: string; // only specified when the course has topic
+  noteForRequirement?: string; // note for requirement
+  recommendedByDepartment?: boolean; // true if the course is recommended by the department
+  status: 'taken' | 'current' | 'planned' | "favorite" | 'notOnSchedule';
+  locationUnavailable: boolean;
+  semesterUnavailable: boolean;
+  available: boolean;
+  semester: string | null;
+}
+
+export interface CourseForRequirement extends CourseForSearch {
+  isUsedInRequirement: boolean; // true if the course is used in the requirement
+}
+
 export const findById = async (_id: string): Promise<Course | null> => {
   return await CourseModel.findOne({ _id }).lean();
 };
