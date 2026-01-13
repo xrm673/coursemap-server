@@ -52,12 +52,8 @@ export const addCoursesToSchedule = async (req: Request, res: Response): Promise
                 return;
             }
             if (isCourseForSchedule(courseData)) {
-                if (!courseData._id || courseData.considered === undefined || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
+                if (!courseData._id || !courseData.semester || courseData.credit === undefined || !courseData.usedInRequirements) {
                     res.status(400).json({ error: 'Each course must have _id, semester, credit, and usedInRequirements' });
-                    return;
-                }
-                if (typeof courseData.considered !== 'boolean') {
-                    res.status(400).json({ error: 'Considered must be a boolean for each course' });
                     return;
                 }
                 if (typeof courseData.credit !== 'number') {
