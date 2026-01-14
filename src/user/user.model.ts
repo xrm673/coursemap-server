@@ -48,6 +48,7 @@ export interface User extends Document {
 export interface RawUserCourse {
     _id: string;
     grpIdentifier?: string;
+    isScheduled: boolean; // true if the course is scheduled
     usedInRequirements: Array<string>; // list of requirements that use this course
     credit?: number; // the credits gained (would gain) from this course
     semester?: string; // the semester that the course is planned or taken in
@@ -56,14 +57,16 @@ export interface RawUserCourse {
 
 export interface CourseForFavorites extends Course {
     grpIdentifier?: string;
+    isScheduled: boolean; // true if the course is scheduled
     usedInRequirements: Array<string>; // list of requirements that use this course
-  }
-  
-  export interface CourseForSchedule extends CourseForFavorites {
+}
+
+export interface CourseForSchedule extends CourseForFavorites {
+    isScheduled: true;
     credit: number; // the credits gained (would gain) from this course
     semester: string; // the semester that the course is planned or taken in
-    sections: Array<string>; // the sections of the course that the user is taking
-  }
+    sections: string[]; // list of sections that the course is scheduled in
+}
 
 // Export database operations as functions
 export const findById = async (id: string): Promise<User | null> => {

@@ -50,6 +50,11 @@ export const addCourseToSchedule = async (
 
         if (existingCourse) {
             existingCourse.semester = semester;
+            if (!existingCourse.isScheduled) {
+                existingCourse.isScheduled = true;
+                existingCourse.credit = courseData.enrollGroups[0].credits[0];
+                existingCourse.sections = generateCourseSections(courseData, semester, originalUserCourses);
+            }
             await user.save();
             
             const processed = originalUserCourses.find(c => 
@@ -64,6 +69,7 @@ export const addCourseToSchedule = async (
         // course not exists, add it to the schedule
         const newRawCourse: RawUserCourse = {
             _id: courseData._id,
+            isScheduled: true,
             usedInRequirements: usedInRequirements,
             semester: semester,
             credit: courseData.enrollGroups[0].credits[0],
@@ -115,6 +121,7 @@ export const saveCourse = async (
         // course not exists, add it to the schedule
         const newRawCourse: RawUserCourse = {
             _id: courseData._id,
+            isScheduled: false,
             usedInRequirements: usedInRequirements,
         };
         if (courseData.grpIdentifier) {
@@ -255,6 +262,7 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
         // Rebuild the course object without the schedule-specific fields
         const updatedCourse: RawUserCourse = {
             _id: originalCourse._id,
+            isScheduled: false,
             grpIdentifier: originalCourse.grpIdentifier,
             usedInRequirements: originalCourse.usedInRequirements,
         };
@@ -379,6 +387,7 @@ const processCourse = (userCourse: RawUserCourse, matchedCourse: Course | undefi
     if (!userCourse.grpIdentifier) {
         return {
             ...matchedCourse,
+            isScheduled: userCourse.isScheduled,
             usedInRequirements: userCourse.usedInRequirements,
             credit: userCourse.credit,
             semester: userCourse.semester,
@@ -391,6 +400,7 @@ const processCourse = (userCourse: RawUserCourse, matchedCourse: Course | undefi
                 ...matchedCourse,
                 enrollGroups: [matchedGroup],
                 grpIdentifier: userCourse.grpIdentifier,
+                isScheduled: userCourse.isScheduled,
                 usedInRequirements: userCourse.usedInRequirements,
                 credit: userCourse.credit,
                 semester: userCourse.semester,
