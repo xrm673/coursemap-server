@@ -45,7 +45,7 @@ export const addCourseToSchedule = async (
         const originalUserCourses = processCourses(user.courses, coursesData);
 
         const existingCourse = user.courses.find(course => 
-            course._id === courseData._id && course.grpIdentifier === courseData.grpIdentifier
+            coursesMatch(course, courseData)
         );
 
         if (existingCourse) {
@@ -112,7 +112,7 @@ export const saveCourse = async (
         const originalUserCourses = processCourses(user.courses, coursesData);
 
         const existingCourse = user.courses.find(course => 
-            course._id === courseData._id && course.grpIdentifier === courseData.grpIdentifier
+            coursesMatch(course, courseData)
         );
         if (existingCourse) {           
             return originalUserCourses;
@@ -143,7 +143,7 @@ export const saveCourse = async (
 };
 
 
-export const deleteCourse = async (userId: string, courseData: CourseForSchedule | CourseForFavorites): Promise<void> => {
+export const deleteCourse = async (userId: string, courseData: CourseForRequirement): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -154,29 +154,19 @@ export const deleteCourse = async (userId: string, courseData: CourseForSchedule
             throw new UserCoursesError('No schedule data found');
         }
 
-        let notFoundCourses: string[] = [];
+        const existingCourse = user.courses.find(course => 
+            coursesMatch(course, courseData)
+        );
 
-        if (isCourseForSchedule(courseData)) {
-            const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
-
-            if (courseIndex === -1) {
-                notFoundCourses.push(`${courseData._id} (${courseData.semester})`);
-            } else {
-                user.courses.splice(courseIndex, 1);
-            }
-        } else {
-            const courseIndex = user.courses.findIndex(course => coursesMatch(course, courseData));
-
-            if (courseIndex === -1) {
-                notFoundCourses.push(`${courseData._id}`);
-            } else {
-                user.courses.splice(courseIndex, 1);
-            }
+        // if course not exists, throw error
+        if (!existingCourse) {
+            throw new UserCoursesError(`Course not found: ${courseData._id}${courseData.grpIdentifier ? ` (${courseData.grpIdentifier})` : ''}`);
         }
 
-        if (notFoundCourses.length > 0) {
-            throw new UserCoursesError(`The following courses were not found in schedule: ${notFoundCourses.join(', ')}`);
-        }
+        // remove the course from user.courses
+        user.courses = user.courses.filter(course => 
+            !coursesMatch(course, courseData)
+        );
 
         await user.save();
     } catch (error) {
@@ -286,7 +276,7 @@ export const removeCourseFromSchedule = async (userId: string, courseData: Cours
 
 export const coursesMatch = (
     rawCourse: RawUserCourse,
-    otherCourse: CourseForSchedule | CourseForFavorites
+    otherCourse: CourseForSchedule | CourseForFavorites | CourseForRequirement
 ) => {
     const otherHasGrp = 'grpIdentifier' in otherCourse && Boolean((otherCourse as any).grpIdentifier);
     const rawCourseHasGrp = 'grpIdentifier' in rawCourse && Boolean((rawCourse as any).grpIdentifier);

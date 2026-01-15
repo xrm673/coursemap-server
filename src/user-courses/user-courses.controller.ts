@@ -4,7 +4,7 @@
 import { Request, Response } from 'express';
 import * as UserCoursesService from './user-courses.service';
 import { CourseForFavorites, CourseForSchedule, isCourseForSchedule } from '../user/user.model';
-
+import { CourseForRequirement } from '../course/course.model';
 
 export const getCourses = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -174,7 +174,7 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
-        const courseData: CourseForSchedule | CourseForFavorites = req.body;
+        const courseData: CourseForRequirement = req.body;
         if (!courseData) {
             res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
             return;
@@ -184,12 +184,6 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
         if (!courseData._id) {
             res.status(400).json({ error: 'Each course must have _id' });
             return;
-        }
-        if (isCourseForSchedule(courseData)) {
-            if (!courseData.semester) {
-                res.status(400).json({ error: 'Each course must have _id and semester' });
-                return;
-            }
         }
 
         await UserCoursesService.deleteCourse(requestingUser._id, courseData);
