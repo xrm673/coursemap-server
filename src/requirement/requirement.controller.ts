@@ -17,7 +17,7 @@ export const getRequirements = async (req: Request, res: Response): Promise<void
 
 export const getRequirementById = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
-    const requirement = await RequirementService.getRequirementById(id);
+    const requirement = await RequirementService.getRequirementById(id as string);
     res.status(200).json(requirement);
 };
 
