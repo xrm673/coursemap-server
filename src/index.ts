@@ -1,6 +1,9 @@
+import dotenv from 'dotenv';
+// Load environment variables
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { courseRouter } from './course/course.routes';
 import { userRouter } from './user/user.routes';
@@ -8,9 +11,6 @@ import { requirementRouter } from './requirement/requirement.routes';
 import { authRouter } from './auth/auth.routes';
 import { programRouter } from './program/program.routes';
 import { userCoursesRouter } from './user-courses/user-courses.routes';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5001;
