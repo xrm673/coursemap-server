@@ -1,5 +1,5 @@
 import { UserModel } from "../user/user.schema";
-import { ProgramModel } from "../program/program.schema";
+import { ProgramTreeModel } from "./program.schema";
 import { ProgramData } from "./model/program.model";
 import { User } from "../user/user.model";
 import { CourseSetNodeData } from "./model/requirement.model";
@@ -7,7 +7,7 @@ import { Course, CourseWithTopic } from "../course/course.model";
 import { RawUserCourse } from "../user/user.model";
 
 import { ProgramResponse } from "./dto/program.dto";
-import { RequirementModel } from "../requirement/requirement.schema";
+import { RequirementTreeModel } from "./requirement.schema";
 import { getCoursesByIds } from "../course/course.service";
 import { Allocation, CourseOption, CourseTakingStatus, CourseUserState } from "./dto/option.dto";
 import { Requirement } from "./dto/requirements.dto";
@@ -17,7 +17,7 @@ import { RequirementData, NodeData } from "./model/requirement.model";
 export const getProgram = async (programId: string, userId: string, selectedSemester: string): Promise<ProgramResponse> => {
     
     // 从数据库获取 program 信息
-    const programDoc = await ProgramModel.findById(programId);
+    const programDoc = await ProgramTreeModel.findById(programId);
     if (!programDoc) {
         throw new Error('Program not found');
     }
@@ -28,18 +28,15 @@ export const getProgram = async (programId: string, userId: string, selectedSeme
         throw new Error('User not found');
     }
 
-    // TODO: 需要将旧的 Program schema 转换为新的 ProgramData 格式
-    // 暂时用类型断言，后续需要实现转换函数
-    const program = programDoc as any as ProgramData;
+    const program = programDoc.toObject() as ProgramData;
 
     // 根据user信息，从program的requirementSets中筛选出符合user的requirementSets
     const userRequirementIds = getRequirementIds(user, program);
 
     // 通过requirementids，从数据库获取requirements
-    const requirementDocs = await RequirementModel.find({ _id: { $in: userRequirementIds } });
+    const requirementDocs = await RequirementTreeModel.find({ _id: { $in: userRequirementIds } });
 
-    // TODO: 需要将旧的 Requirement schema 转换为新的 RequirementData 格式
-    const requirementsData = requirementDocs as any as RequirementData[];
+    const requirementsData = requirementDocs.map(doc => doc.toObject()) as RequirementData[];
 
     // 构建所有 requirements
     const requirementsList: Requirement[] = [];

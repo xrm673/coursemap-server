@@ -12,3 +12,5 @@ export const takenSemesters = [
     "FA23", "WI24", "SP24", "SU24", 
     "FA24", "WI25", "SP25", "SU25", "unspecified"
 ];
+
+export const DEFAULT_SEMESTER = "SP26";

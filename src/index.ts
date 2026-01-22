@@ -11,6 +11,7 @@ import { requirementRouter } from './requirement/requirement.routes';
 import { authRouter } from './auth/auth.routes';
 import { programRouter } from './program/program.routes';
 import { userCoursesRouter } from './user-courses/user-courses.routes';
+import { newProgramRouter } from './new-program/new-program.routes';
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -26,6 +27,7 @@ app.use('/api/programs', programRouter);
 app.use('/api/requirements', requirementRouter);
 app.use('/api/users', userRouter);
 app.use('/api/my-courses', userCoursesRouter);
+app.use('/api/new-program', newProgramRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
