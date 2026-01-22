@@ -62,11 +62,13 @@ export const getProgram = async (programId: string, userId: string, selectedSeme
     };
 
     // 构建 appliesTo（用户上下文）
+    // 获取匹配时使用的用户上下文
+    const userContext = getUserContextForProgram(user, program);
     const appliesTo = {
         year: user.year,
         collegeId: user.college?.collegeId,
-        majorId: user.majors[0]?.majorId, // 假设取第一个 major
-        concentrationNames: user.majors[0]?.concentrationNames
+        majorId: userContext.majorId,
+        concentrationNames: userContext.concentrationNames
     };
 
     // 组装完整响应
@@ -89,9 +91,115 @@ export const getProgram = async (programId: string, userId: string, selectedSeme
     return response;
 };
 
-const getRequirementIds = (user: User, program: ProgramData): string[] => {
-    // TODO: 实现根据用户信息筛选 requirement sets
+/**
+ * 根据用户信息筛选出适用的 requirement set
+ * 
+ * 匹配规则：
+ * 1. 如果 program 某个维度是 dependent，则必须匹配该维度
+ * 2. concentration 只在 program 是 user program 时才考虑
+ * 3. 如果没有找到完全匹配的 set，返回第一个 set
+ */
+export const getRequirementIds = (user: User, program: ProgramData): string[] => {
+    if (!program.requirementSets || program.requirementSets.length === 0) {
+        return [];
+    }
+
+    // 判断这个 program 是否是用户的 program
+    const isProgramForUser = isUserProgram(program, user);
+
+    // 遍历所有 requirementSets，找到第一个匹配的
+    for (const reqSet of program.requirementSets) {
+        const { appliesTo } = reqSet;
+        let matches = true;
+
+        // 检查 year
+        if (program.yearDependent && appliesTo.entryYear !== undefined) {
+            if (appliesTo.entryYear !== user.year) {
+                matches = false;
+            }
+        }
+
+        // 检查 college
+        if (program.collegeDependent && appliesTo.collegeId !== undefined) {
+            if (appliesTo.collegeId !== user.college?.collegeId) {
+                matches = false;
+            }
+        }
+
+        // 检查 major
+        if (program.majorDependent && appliesTo.majorId !== undefined) {
+            const userHasMajor = user.majors.some(major => major.majorId === appliesTo.majorId);
+            if (!userHasMajor) {
+                matches = false;
+            }
+        }
+
+        // 检查 concentration（只在 program 是 user program 时才检查）
+        if (program.concentrationDependent && isProgramForUser && appliesTo.concentrationNames !== undefined) {
+            // null 或 undefined 表示适用于任何 concentration（兜底 set）
+            if (appliesTo.concentrationNames !== null) {
+                // 检查用户是否有任何一个匹配的 concentration
+                const userConcentrations = getUserConcentrations(user, program);
+                const hasMatchingConcentration = appliesTo.concentrationNames.some(
+                    reqConcentration => userConcentrations.includes(reqConcentration)
+                );
+                if (!hasMatchingConcentration) {
+                    matches = false;
+                }
+            }
+        }
+
+        if (matches) {
+            return reqSet.requirementIds;
+        }
+    }
+
+    // 如果没有找到匹配的，返回第一个 set
+    return program.requirementSets[0].requirementIds;
+};
+
+/**
+ * 获取用户在特定 program 下的 concentration 名称
+ */
+const getUserConcentrations = (user: User, program: ProgramData): string[] => {
+    if (program.type === 'major') {
+        const userMajor = user.majors.find(m => m.majorId === program._id);
+        return userMajor?.concentrationNames || [];
+    } else if (program.type === 'minor') {
+        const userMinor = user.minors.find(m => m.minorId === program._id);
+        return userMinor?.concentrationNames || [];
+    }
     return [];
+};
+
+/**
+ * 获取用户在当前 program 下的上下文信息（majorId 和 concentrations）
+ * 用于填充 appliesTo 字段
+ */
+const getUserContextForProgram = (
+    user: User, 
+    program: ProgramData
+): { majorId?: string; concentrationNames?: string[] } => {
+    if (program.type === 'major') {
+        const userMajor = user.majors.find(m => m.majorId === program._id);
+        return {
+            majorId: userMajor?.majorId,
+            concentrationNames: userMajor?.concentrationNames
+        };
+    } else if (program.type === 'minor') {
+        const userMinor = user.minors.find(m => m.minorId === program._id);
+        return {
+            majorId: undefined,
+            concentrationNames: userMinor?.concentrationNames
+        };
+    } else if (program.type === 'college') {
+        // College 类型的 program，返回用户的第一个 major（如果有的话）
+        return {
+            majorId: user.majors[0]?.majorId,
+            concentrationNames: undefined
+        };
+    }
+    return {};
 };
 
 /**
@@ -205,7 +313,6 @@ const buildRequirement = async (
 
 /**
  * 从叶子节点向上传播，计算 GROUP nodes 的状态
- * TODO: 实现完整的传播逻辑
  */
 const propagateGroupNodeStates = (nodesById: Record<string, Node>, rootNodeId: string): void => {
     // 递归计算每个 GROUP node 的状态

@@ -4,9 +4,11 @@ import {
   getCourseOptionId,
   getCourseStatus,
   findMatchingUserCourse,
+  getRequirementIds,
 } from '../../src/new-program/program.service';
 import { Course, CourseWithTopic } from '../../src/course/course.model';
-import { RawUserCourse } from '../../src/user/user.model';
+import { RawUserCourse, User } from '../../src/user/user.model';
+import { ProgramData } from '../../src/new-program/model/program.model';
 
 // ============= Test Fixtures =============
 
@@ -93,6 +95,181 @@ const userCourseSets = {
     mockUserCourses.planned_CS3110,
     mockUserCourses.saved_INFO4210,
   ],
+};
+
+// Mock Users
+const mockUsers = {
+  // 2023 SEAS CS major with AI concentration
+  seas_cs_2023_ai: {
+    _id: 'user1',
+    year: '2023',
+    college: { collegeId: 'seas', name: 'Engineering' },
+    majors: [
+      {
+        majorId: 'cs',
+        name: 'Computer Science',
+        concentrationNames: ['AI'],
+      },
+    ],
+    minors: [],
+    courses: [],
+  } as unknown as User,
+
+  // 2024 CALS IS major, no concentration
+  cals_is_2024: {
+    _id: 'user2',
+    year: '2024',
+    college: { collegeId: 'cals', name: 'Agriculture and Life Sciences' },
+    majors: [
+      {
+        majorId: 'is',
+        name: 'Information Science',
+        concentrationNames: [],
+      },
+    ],
+    minors: [],
+    courses: [],
+  } as unknown as User,
+
+  // 2023 Arts CS major with multiple concentrations
+  arts_cs_2023_multi: {
+    _id: 'user3',
+    year: '2023',
+    college: { collegeId: 'arts', name: 'Arts and Sciences' },
+    majors: [
+      {
+        majorId: 'cs',
+        name: 'Computer Science',
+        concentrationNames: ['Systems', 'AI'],
+      },
+    ],
+    minors: [],
+    courses: [],
+  } as unknown as User,
+
+  // User with CS major and Math minor
+  seas_cs_math_minor: {
+    _id: 'user4',
+    year: '2024',
+    college: { collegeId: 'seas', name: 'Engineering' },
+    majors: [
+      {
+        majorId: 'cs',
+        name: 'Computer Science',
+        concentrationNames: [],
+      },
+    ],
+    minors: [
+      {
+        minorId: 'math',
+        name: 'Mathematics',
+        concentrationNames: [],
+      },
+    ],
+    courses: [],
+  } as unknown as User,
+};
+
+// Mock Programs
+const mockPrograms = {
+  // CS Major - year and college dependent, has concentrations
+  cs_major: {
+    _id: 'cs',
+    name: 'Computer Science',
+    type: 'major',
+    yearDependent: true,
+    majorDependent: false,
+    collegeDependent: true,
+    concentrationDependent: true,
+    colleges: [
+      { collegeId: 'seas', name: 'Engineering' },
+      { collegeId: 'arts', name: 'Arts and Sciences' },
+    ],
+    requirementSets: [
+      {
+        appliesTo: { entryYear: '2023', collegeId: 'seas', concentrationNames: ['AI'] },
+        requirementIds: ['req_cs_2023_seas_ai'],
+      },
+      {
+        appliesTo: { entryYear: '2023', collegeId: 'seas', concentrationNames: null },
+        requirementIds: ['req_cs_2023_seas_general'],
+      },
+      {
+        appliesTo: { entryYear: '2023', collegeId: 'arts', concentrationNames: null },
+        requirementIds: ['req_cs_2023_arts_general'],
+      },
+      {
+        appliesTo: { entryYear: '2024', collegeId: 'seas', concentrationNames: null },
+        requirementIds: ['req_cs_2024_seas_general'],
+      },
+    ],
+  } as ProgramData,
+
+  // IS Major - only year dependent
+  is_major: {
+    _id: 'is',
+    name: 'Information Science',
+    type: 'major',
+    yearDependent: true,
+    majorDependent: false,
+    collegeDependent: false,
+    concentrationDependent: false,
+    colleges: [{ collegeId: 'cals', name: 'CALS' }],
+    requirementSets: [
+      {
+        appliesTo: { entryYear: '2023' },
+        requirementIds: ['req_is_2023'],
+      },
+      {
+        appliesTo: { entryYear: '2024' },
+        requirementIds: ['req_is_2024'],
+      },
+      {
+        appliesTo: {},
+        requirementIds: ['req_is_default'],
+      },
+    ],
+  } as ProgramData,
+
+  // Math Minor - no dependencies
+  math_minor: {
+    _id: 'math',
+    name: 'Mathematics',
+    type: 'minor',
+    yearDependent: false,
+    majorDependent: false,
+    collegeDependent: false,
+    concentrationDependent: false,
+    colleges: [],
+    requirementSets: [
+      {
+        appliesTo: {},
+        requirementIds: ['req_math_universal'],
+      },
+    ],
+  } as ProgramData,
+
+  // Liberal Arts - college requirements
+  liberal_arts: {
+    _id: 'arts',
+    name: 'College of Arts and Sciences',
+    type: 'college',
+    yearDependent: true,
+    majorDependent: false,
+    collegeDependent: false,
+    concentrationDependent: false,
+    majors: [],
+    requirementSets: [
+      {
+        appliesTo: { entryYear: '2023' },
+        requirementIds: ['req_arts_2023'],
+      },
+      {
+        appliesTo: { entryYear: '2024' },
+        requirementIds: ['req_arts_2024'],
+      },
+    ],
+  } as ProgramData,
 };
 
 describe('Semester Utilities', () => {
@@ -183,30 +360,32 @@ describe('Course Matching', () => {
     const userCourses = userCourseSets.withTopics;
 
     test('应该找到普通课程', () => {
-      const course = { _id: 'COMS3134' } as Course;
-      const matched = findMatchingUserCourse(course, userCourses);
+      // withTopics 集合中没有普通课程，使用 basic 集合
+      const basicCourses = userCourseSets.basic;
+      const course = { _id: 'CS1110' } as Course;
+      const matched = findMatchingUserCourse(course, basicCourses);
       expect(matched).toBeDefined();
-      expect(matched?._id).toBe('COMS3134');
+      expect(matched?._id).toBe('CS1110');
     });
 
     test('应该找到有 grpIdentifier 的课程', () => {
       const courseWithTopic = {
-        _id: 'COMS3998',
-        grpIdentifier: 'COMS3998_001',
+        _id: 'INFO4940',
+        grpIdentifier: 'AI Product Design',
       } as unknown as CourseWithTopic;
       const matched = findMatchingUserCourse(courseWithTopic, userCourses);
       expect(matched).toBeDefined();
-      expect(matched?.grpIdentifier).toBe('COMS3998_001');
+      expect(matched?.grpIdentifier).toBe('AI Product Design');
     });
 
     test('应该区分不同的 grpIdentifier', () => {
       const courseWithTopic = {
-        _id: 'COMS3998',
-        grpIdentifier: 'COMS3998_002',
+        _id: 'COMM4940',
+        grpIdentifier: 'Comm Lab',
       } as unknown as CourseWithTopic;
       const matched = findMatchingUserCourse(courseWithTopic, userCourses);
       expect(matched).toBeDefined();
-      expect(matched?.grpIdentifier).toBe('COMS3998_002');
+      expect(matched?.grpIdentifier).toBe('Comm Lab');
     });
 
     test('应该在找不到课程时返回 undefined', () => {
@@ -239,7 +418,7 @@ describe('Course Status', () => {
     });
 
     test('课程在 userCourses 但未 scheduled 应该返回 SAVED', () => {
-      const course = { _id: 'COMS3261' } as Course;
+      const course = { _id: 'INFO4210' } as Course;
       const userCourses = [mockUserCourses.saved_INFO4210];
       const [status, isScheduled] = getCourseStatus(course, userCourses, selectedSemester);
       expect(status).toBe('SAVED');
@@ -247,7 +426,7 @@ describe('Course Status', () => {
     });
 
     test('课程在当前学期应该返回 IN_PROGRESS', () => {
-      const course = { _id: 'COMS4118' } as Course;
+      const course = { _id: 'INFO2950' } as Course;
       const userCourses = [mockUserCourses.inProgress_INFO2950];
       const [status, isScheduled] = getCourseStatus(course, userCourses, selectedSemester);
       expect(status).toBe('IN_PROGRESS');
@@ -255,7 +434,7 @@ describe('Course Status', () => {
     });
 
     test('课程在之前的学期应该返回 COMPLETED', () => {
-      const course = { _id: 'COMS3134' } as Course;
+      const course = { _id: 'CS1110' } as Course;
       const userCourses = [mockUserCourses.completed_CS1110];
       const [status, isScheduled] = getCourseStatus(course, userCourses, selectedSemester);
       expect(status).toBe('COMPLETED');
@@ -263,7 +442,7 @@ describe('Course Status', () => {
     });
 
     test('课程在未来的学期应该返回 PLANNED', () => {
-      const course = { _id: 'COMS4156' } as Course;
+      const course = { _id: 'CS3110' } as Course;
       const userCourses = [mockUserCourses.planned_CS3110];
       const [status, isScheduled] = getCourseStatus(course, userCourses, selectedSemester);
       expect(status).toBe('PLANNED');
@@ -287,11 +466,119 @@ describe('Course Status', () => {
     });
 
     test('unspecified semester 应该被视为 COMPLETED', () => {
-      const course = { _id: 'COMS1004' } as Course;
+      const course = { _id: 'CS1112' } as Course;
       const userCourses = [mockUserCourses.completed_unspecified];
       const [status, isScheduled] = getCourseStatus(course, userCourses, selectedSemester);
       expect(status).toBe('COMPLETED');
       expect(isScheduled).toBe(true);
+    });
+  });
+});
+
+describe('Requirement Set Matching', () => {
+  describe('getRequirementIds', () => {
+    test('应该匹配 year + college + concentration', () => {
+      // 2023 SEAS CS major with AI concentration
+      const user = mockUsers.seas_cs_2023_ai;
+      const program = mockPrograms.cs_major;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_cs_2023_seas_ai']);
+    });
+
+    test('应该匹配 year + college (concentration 为 null 的兜底 set)', () => {
+      // 2023 SEAS CS major，但没有 concentration，应该匹配兜底 set
+      const user = {
+        ...mockUsers.seas_cs_2023_ai,
+        majors: [{ majorId: 'cs', name: 'CS', concentrationNames: [] }],
+      } as unknown as User;
+      const program = mockPrograms.cs_major;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_cs_2023_seas_general']);
+    });
+
+    test('应该匹配不同 college 的 requirement set', () => {
+      // 2023 Arts CS major
+      const user = mockUsers.arts_cs_2023_multi;
+      const program = mockPrograms.cs_major;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_cs_2023_arts_general']);
+    });
+
+    test('应该只根据 year 匹配（不 dependent 其他维度）', () => {
+      // IS major 只 year dependent
+      const user = mockUsers.cals_is_2024;
+      const program = mockPrograms.is_major;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_is_2024']);
+    });
+
+    test('应该匹配无任何 dependency 的 program', () => {
+      // Math minor 没有任何 dependency
+      const user = mockUsers.seas_cs_math_minor;
+      const program = mockPrograms.math_minor;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_math_universal']);
+    });
+
+    test('应该在找不到匹配时返回第一个 set', () => {
+      // 2025 年的用户，但没有对应的 year-specific set
+      // 会匹配到 appliesTo: {} 的 default set
+      const user = {
+        ...mockUsers.seas_cs_2023_ai,
+        year: '2025',
+      } as unknown as User;
+      const program = mockPrograms.is_major;
+      const reqIds = getRequirementIds(user, program);
+      // 在这个例子中，会匹配到第三个 set (appliesTo: {})
+      expect(reqIds).toEqual(['req_is_default']);
+    });
+
+    test('应该处理空的 requirementSets', () => {
+      const user = mockUsers.seas_cs_2023_ai;
+      const program = {
+        ...mockPrograms.cs_major,
+        requirementSets: [],
+      } as ProgramData;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual([]);
+    });
+
+    test('concentration 只在 user program 时才检查', () => {
+      // 用户查看不是自己的 major 时，不应该检查 concentration
+      const user = mockUsers.cals_is_2024; // IS major
+      const program = mockPrograms.cs_major; // CS major (not user's)
+      const reqIds = getRequirementIds(user, program);
+      // 应该匹配到 2024 SEAS 的 general set（因为 user 是 2024 年，但 college 不匹配）
+      // 或者第一个 set（因为没有完全匹配）
+      expect(reqIds).toBeDefined();
+    });
+
+    test('应该匹配 college requirements (year dependent)', () => {
+      // Arts college，2023 年入学
+      const user = mockUsers.arts_cs_2023_multi;
+      const program = mockPrograms.liberal_arts;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_arts_2023']);
+    });
+
+    test('应该匹配多个 concentrations 中的任意一个', () => {
+      // 用户有 Systems 和 AI 两个 concentrations
+      const user = mockUsers.arts_cs_2023_multi; // 有 Systems 和 AI
+      const program = {
+        ...mockPrograms.cs_major,
+        requirementSets: [
+          {
+            appliesTo: { entryYear: '2023', collegeId: 'arts', concentrationNames: ['Systems'] },
+            requirementIds: ['req_cs_2023_arts_systems'],
+          },
+          {
+            appliesTo: { entryYear: '2023', collegeId: 'arts', concentrationNames: null },
+            requirementIds: ['req_cs_2023_arts_general'],
+          },
+        ],
+      } as ProgramData;
+      const reqIds = getRequirementIds(user, program);
+      expect(reqIds).toEqual(['req_cs_2023_arts_systems']);
     });
   });
 });

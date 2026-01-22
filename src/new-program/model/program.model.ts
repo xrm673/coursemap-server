@@ -3,6 +3,10 @@ interface ProgramDataBase {
     name: string;
     type: "major" | "minor" | "college";
     description?: string;
+    yearDependent: boolean;
+    majorDependent: boolean;
+    collegeDependent: boolean;
+    concentrationDependent: boolean;
     requirementSets: Array<RequirementSet>;
 }
 
