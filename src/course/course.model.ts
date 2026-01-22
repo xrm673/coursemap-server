@@ -158,6 +158,11 @@ export interface Meeting {
   topic?: string; // topic of the meeting
 }
 
+export interface CourseWithTopic extends Course {
+  courseHasTopic: true;
+  topic: string;
+}
+
 export interface NoDataCourse {
   _id: string;
   sbj: string;
