@@ -21,7 +21,7 @@ export const getProgramById = async (
 ): Promise<void> => {
     try {
         const { programId } = req.params;
-        const program = await ProgramService.getProgramById(programId);
+        const program = await ProgramService.getProgramById(programId as string);
         res.status(200).json(program);
     } catch (error) {
         console.error('Error getting program:', error);
