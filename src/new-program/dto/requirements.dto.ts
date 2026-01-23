@@ -16,7 +16,7 @@ interface RequirementInfo {
     uiType: "LIST" | "GROUP" | "OPTION";
     programId: string;
     concentrationName?: string;
-    overlap: string[];
+    conflictsWith: string[];
 }
 
 interface RequirementSummary {

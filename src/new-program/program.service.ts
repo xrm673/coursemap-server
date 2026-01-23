@@ -2,17 +2,14 @@ import { UserModel } from "../user/user.schema";
 import { ProgramTreeModel } from "./program.schema";
 import { ProgramData } from "./model/program.model";
 import { User } from "../user/user.model";
-import { CourseSetNodeData } from "./model/requirement.model";
-import { Course, CourseWithTopic } from "../course/course.model";
 import { RawUserCourse } from "../user/user.model";
 
 import { ProgramResponse } from "./dto/program.dto";
 import { RequirementTreeModel } from "./requirement.schema";
-import { getCoursesByIds } from "../course/course.service";
-import { Allocation, CourseOption, CourseTakingStatus, CourseUserState } from "./dto/option.dto";
 import { Requirement } from "./dto/requirements.dto";
 import { Node, CourseSetNode, GroupNode } from "./dto/node.dto";
-import { RequirementData, NodeData } from "./model/requirement.model";
+import { RequirementData } from "./model/requirement.model";
+import { computeCourseSetNodeState } from "./course-allocation.service";
 
 export const getProgram = async (programId: string, userId: string, selectedSemester: string): Promise<ProgramResponse> => {
     
@@ -209,8 +206,8 @@ const buildRequirement = async (
     allRequirementsData: RequirementData[]
 ): Promise<Requirement> => {
     
-    // 1. 计算互斥的 requirement IDs（不在 overlap 列表里的其他 requirements）
-    const overlapRequirementIds = requirementData.overlap || [];
+    // 1. 计算互斥的 requirement IDs（不在 conflictsWith 列表里的其他 requirements）
+    const conflictsWithRequirementIds = requirementData.conflictsWith || [];
     
     // 2. 构建 nodesById
     const nodesById: Record<string, Node> = {};
@@ -231,7 +228,7 @@ const buildRequirement = async (
                 userCourses,
                 selectedSemester,
                 requirementData._id,
-                overlapRequirementIds
+                conflictsWithRequirementIds
             );
             
             const courseSetNode: CourseSetNode = {
@@ -289,7 +286,7 @@ const buildRequirement = async (
             uiType: requirementData.uiType,
             programId: requirementData.programId,
             concentrationName: requirementData.concentrationName,
-            overlap: requirementData.overlap
+            conflictsWith: requirementData.conflictsWith
         },
         rootNodeId: requirementData.rootNodeId,
         nodesById: nodesById,
@@ -351,380 +348,4 @@ const isUserProgram = (program: ProgramData, user: User): boolean => {
         return user.minors.some(minor => minor.minorId === program._id);
     }
     return false;
-};
-
-interface NodeStateResult {
-    courseOptions: CourseOption[];
-    nodeState: {
-        isFulfilled: boolean;
-        fulfilledCount: number;
-        completedUsedOptionIds: string[];
-        completedNotUsedOptionIds: string[];
-        inProgressUsedOptionIds: string[];
-        inProgressNotUsedOptionIds: string[];
-        plannedUsedOptionIds: string[];
-        plannedNotUsedOptionIds: string[];
-        savedUsedOptionIds: string[];
-        savedNotUsedOptionIds: string[];
-    };
-}
-
-const computeCourseSetNodeState = async (
-    nodeData: CourseSetNodeData, 
-    userCourses: RawUserCourse[], 
-    selectedSemester: string,
-    requirementId: string,
-    overlapRequirementIds: string[]
-): Promise<NodeStateResult> => {
-    
-    // 1. 获取所有课程并生成 CourseOption（不含 allocation）
-    const courses = await getCoursesByIds(nodeData.options);
-    const allCourseOptions: CourseOption[] = [];
-
-    for (const course of courses) {
-        if (course.courseHasTopic) {
-            const coursesWithTopic = getCoursesByTopics(course, nodeData);
-            for (const courseWithTopic of coursesWithTopic) {
-                const courseOption: CourseOption = {
-                    optionId: getCourseOptionId(courseWithTopic),
-                    type: "COURSE",
-                    course: courseWithTopic,
-                    userState: generateCourseUserState(courseWithTopic, userCourses, selectedSemester),
-                    allocation: { isCountedHere: false, notCountedReasons: [] } // 临时值，后面会更新
-                };
-                allCourseOptions.push(courseOption);
-            }
-        } else {
-            const courseOption: CourseOption = {
-                optionId: getCourseOptionId(course),
-                type: "COURSE",
-                course: course,
-                userState: generateCourseUserState(course, userCourses, selectedSemester),
-                allocation: { isCountedHere: false, notCountedReasons: [] } // 临时值，后面会更新
-            };
-            allCourseOptions.push(courseOption);
-        }
-    }
-
-    // 2. 筛选出在 userCourses 里的 options 并按优先级排序
-    const scheduledOptions = allCourseOptions
-        .filter(option => option.userState.isScheduled || option.userState.status === "SAVED")
-        .sort((a, b) => compareCoursePriority(a, b, selectedSemester));
-
-    // 3. 初始化 nodeState
-    const nodeState = {
-        isFulfilled: false,
-        fulfilledCount: 0,
-        completedUsedOptionIds: [] as string[],
-        completedNotUsedOptionIds: [] as string[],
-        inProgressUsedOptionIds: [] as string[],
-        inProgressNotUsedOptionIds: [] as string[],
-        plannedUsedOptionIds: [] as string[],
-        plannedNotUsedOptionIds: [] as string[],
-        savedUsedOptionIds: [] as string[],
-        savedNotUsedOptionIds: [] as string[],
-    };
-
-    const pickCount = nodeData.rule.pick;
-    let usedCount = 0;
-
-    // 4. 遍历排序后的 options，分配到对应的数组
-    for (const option of scheduledOptions) {
-        const userCourse = findMatchingUserCourse(option.course, userCourses);
-        if (!userCourse) continue;
-
-        const status = option.userState.status;
-        const isAlreadyUsedElsewhere = hasConflictingRequirement(
-            userCourse, 
-            requirementId, 
-            overlapRequirementIds
-        );
-
-        // 判断是否可以被当前 node 使用
-        const canBeUsed = (usedCount < pickCount) && !isAlreadyUsedElsewhere;
-
-        if (canBeUsed) {
-            // 标记为已使用
-            if (!userCourse.usedInRequirements.includes(requirementId)) {
-                userCourse.usedInRequirements.push(requirementId);
-            }
-
-            // 根据状态分类到 *UsedOptionIds
-            if (status === "COMPLETED") {
-                nodeState.completedUsedOptionIds.push(option.optionId);
-                usedCount++;
-                nodeState.fulfilledCount++;
-            } else if (status === "IN_PROGRESS") {
-                nodeState.inProgressUsedOptionIds.push(option.optionId);
-            } else if (status === "PLANNED") {
-                nodeState.plannedUsedOptionIds.push(option.optionId);
-            } else if (status === "SAVED") {
-                nodeState.savedUsedOptionIds.push(option.optionId);
-            }
-
-            // 更新 allocation
-            option.allocation = { isCountedHere: true };
-
-        } else {
-            // 根据状态分类到 *NotUsedOptionIds
-            const notCountedReasons = [];
-            if (usedCount >= pickCount) {
-                notCountedReasons.push({ reason: "OVER_LIMIT" as const });
-            }
-            if (isAlreadyUsedElsewhere) {
-                const conflictReqId = findConflictingRequirementId(userCourse, overlapRequirementIds);
-                notCountedReasons.push({ 
-                    reason: "ALREADY_COUNTED_ELSEWHERE" as const,
-                    requirementId: conflictReqId
-                });
-            }
-
-            if (status === "COMPLETED") {
-                nodeState.completedNotUsedOptionIds.push(option.optionId);
-            } else if (status === "IN_PROGRESS") {
-                nodeState.inProgressNotUsedOptionIds.push(option.optionId);
-            } else if (status === "PLANNED") {
-                nodeState.plannedNotUsedOptionIds.push(option.optionId);
-            } else if (status === "SAVED") {
-                nodeState.savedNotUsedOptionIds.push(option.optionId);
-            }
-
-            // 更新 allocation
-            option.allocation = { 
-                isCountedHere: false, 
-                notCountedReasons 
-            };
-        }
-    }
-
-    // 5. 判断 node 是否已满足
-    nodeState.isFulfilled = nodeState.fulfilledCount >= pickCount;
-
-    return {
-        courseOptions: allCourseOptions,
-        nodeState
-    };
-};
-
-const getCoursesByTopics = (course: Course, nodeData: CourseSetNodeData): CourseWithTopic[] => {
-    let filteredGroups = course.enrollGroups;
-    if (nodeData.courseNotes && nodeData.courseNotes.length > 0) {
-        // check if the requirement has a course note for this course
-        const courseNote = nodeData.courseNotes.find(note => note.courseId === course._id);
-        if (courseNote && courseNote.grpIdentifierArray) {
-            filteredGroups = filteredGroups.filter(group => 
-                courseNote.grpIdentifierArray?.includes(group.grpIdentifier)
-            );
-        }
-    }
-
-    return filteredGroups.map(group => ({
-        ...course,
-        enrollGroups: [group],
-        courseHasTopic: group.hasTopic,
-        topic: group.topic
-    } as CourseWithTopic));
-};
-
-const generateCourseUserState = (course: Course | CourseWithTopic, userCourses: RawUserCourse[], selectedSemester: string): CourseUserState => {
-    const [status, isScheduled] = getCourseStatus(course, userCourses, selectedSemester);
-    const isSemesterAvailable = isAvailableInSemester(course, selectedSemester);
-    const isLocationAvailable = isAvailableInLocation(course);
-    const isAvailable = isSemesterAvailable && isLocationAvailable;
-    
-    const matchedCourse = findMatchingUserCourse(course, userCourses);
-
-    if (isScheduled && matchedCourse) {
-        return {
-            isScheduled: true,
-            status: status as "COMPLETED" | "IN_PROGRESS" | "PLANNED",
-            isAvailable,
-            isSemesterAvailable,
-            isLocationAvailable,
-            credit: matchedCourse.credit || 0,
-            semester: matchedCourse.semester || "",
-            sections: matchedCourse.sections || []
-        };
-    } else {
-        return {
-            isScheduled: false,
-            status: status as "SAVED" | "NOT_ON_SCHEDULE",
-            isAvailable,
-            isSemesterAvailable,
-            isLocationAvailable,
-        };
-    }
-};
-
-export const getCourseStatus = (reqCourse: Course | CourseWithTopic, userCourses: RawUserCourse[], selectedSemester: string): [CourseTakingStatus, boolean] => {
-    const matchedCourse = findMatchingUserCourse(reqCourse, userCourses);
-    if (!matchedCourse) return ["NOT_ON_SCHEDULE", false];
-    if (!matchedCourse.isScheduled) return ["SAVED", false];
-    if (matchedCourse.semester === selectedSemester) return ["IN_PROGRESS", true];
-    if (isPriorSemester(matchedCourse.semester!, selectedSemester)) return ["COMPLETED", true];
-    return ["PLANNED", true];
-}
-
-export const isPriorSemester = (semester: string, selectedSemester: string): boolean => {
-    if (semester === "unspecified") {
-        return true;
-    }
-    const semesterYear = parseInt(semester.slice(-2));
-    const currentYear = parseInt(selectedSemester.slice(-2));
-    if (semesterYear > currentYear) {
-        return false;
-    }
-    if (semesterYear < currentYear) {
-        return true;
-    }
-    
-    // Years are the same, compare seasons
-    const semesterSeason = semester.slice(0, 2);
-    const currentSeason = selectedSemester.slice(0, 2);
-    
-    // Season order: WI, SP, SU, FA
-    const seasonOrder = ["WI", "SP", "SU", "FA"];
-    const semesterSeasonIndex = seasonOrder.indexOf(semesterSeason);
-    const currentSeasonIndex = seasonOrder.indexOf(currentSeason);
-    
-    return semesterSeasonIndex < currentSeasonIndex;
-}
-
-export const isAvailableInLocation = (course: Course): boolean => {
-    // 如果任何一个 enrollGroup 有 locationConflicts，则该课程在地点上不可用
-    // 返回 true 当所有 enrollGroup 都没有 locationConflicts
-    const hasLocationConflicts = course.enrollGroups?.some(group => group.locationConflicts) ?? false;
-    return !hasLocationConflicts;
-};
-
-export const isAvailableInSemester = (course: Course, semester: string): boolean => {
-    return course.enrollGroups?.some(group => 
-        group.grpSmst.includes(semester)
-    );
-}
-
-// ============= 辅助函数 =============
-
-/**
- * 获取课程选项的唯一ID
- * 如果课程有 topic，使用 courseId + grpIdentifier
- * 否则使用 courseId
- */
-export const getCourseOptionId = (course: Course | CourseWithTopic): string => {
-    if ('grpIdentifier' in course && course.grpIdentifier) {
-        return `${course._id}_${course.grpIdentifier}`;
-    }
-    return course._id;
-};
-
-/**
- * 比较两个课程选项的优先级
- * 优先级：COMPLETED > IN_PROGRESS > PLANNED > SAVED
- * 同状态内按 semester 排序（早的优先）
- */
-const compareCoursePriority = (
-    a: CourseOption, 
-    b: CourseOption, 
-    selectedSemester: string
-): number => {
-    const statusPriority: Record<CourseTakingStatus, number> = {
-        "COMPLETED": 0,
-        "IN_PROGRESS": 1,
-        "PLANNED": 2,
-        "SAVED": 3,
-        "NOT_ON_SCHEDULE": 4
-    };
-
-    const priorityA = statusPriority[a.userState.status];
-    const priorityB = statusPriority[b.userState.status];
-
-    if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-    }
-
-    // 同状态内按 semester 排序
-    if (a.userState.isScheduled && b.userState.isScheduled) {
-        const semesterA = a.userState.semester;
-        const semesterB = b.userState.semester;
-        
-        // 如果有 unspecified，放在最前面
-        if (semesterA === "unspecified") return -1;
-        if (semesterB === "unspecified") return 1;
-        
-        // 比较 semester（早的优先）
-        return compareSemester(semesterA, semesterB);
-    }
-
-    return 0;
-};
-
-/**
- * 比较两个 semester，返回排序值
- * 早的 semester 返回负数（排在前面）
- */
-export const compareSemester = (semesterA: string, semesterB: string): number => {
-    const yearA = parseInt(semesterA.slice(-2));
-    const yearB = parseInt(semesterB.slice(-2));
-    
-    if (yearA !== yearB) {
-        return yearA - yearB;
-    }
-    
-    // Years are the same, compare seasons
-    const seasonOrder = ["WI", "SP", "SU", "FA"];
-    const seasonA = semesterA.slice(0, 2);
-    const seasonB = semesterB.slice(0, 2);
-    
-    return seasonOrder.indexOf(seasonA) - seasonOrder.indexOf(seasonB);
-};
-
-/**
- * 在 userCourses 中找到匹配的课程
- */
-export const findMatchingUserCourse = (
-    course: Course | CourseWithTopic, 
-    userCourses: RawUserCourse[]
-): RawUserCourse | undefined => {
-    return userCourses.find(userCourse => {
-        const courseIdMatches = userCourse._id === course._id;
-        
-        // 如果课程有 grpIdentifier，也需要匹配
-        if ('grpIdentifier' in course && course.grpIdentifier) {
-            return courseIdMatches && userCourse.grpIdentifier === course.grpIdentifier;
-        }
-        
-        return courseIdMatches;
-    });
-};
-
-/**
- * 检查课程是否已被互斥的 requirement 使用
- */
-const hasConflictingRequirement = (
-    userCourse: RawUserCourse,
-    currentRequirementId: string,
-    overlapRequirementIds: string[]
-): boolean => {
-    return userCourse.usedInRequirements.some(reqId => {
-        // 如果是当前 requirement，不算冲突
-        if (reqId === currentRequirementId) return false;
-        
-        // 如果是允许 overlap 的 requirement，不算冲突
-        if (overlapRequirementIds.includes(reqId)) return false;
-        
-        // 其他情况都算冲突
-        return true;
-    });
-};
-
-/**
- * 找到冲突的 requirement ID
- */
-const findConflictingRequirementId = (
-    userCourse: RawUserCourse,
-    overlapRequirementIds: string[]
-): string | undefined => {
-    return userCourse.usedInRequirements.find(reqId => {
-        return !overlapRequirementIds.includes(reqId);
-    });
 };

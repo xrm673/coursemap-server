@@ -31,7 +31,7 @@ const RequirementSchema = new Schema<RequirementData>({
   uiType: { type: String, enum: ['LIST', 'GROUP', 'OPTION'], required: true },
   programId: { type: String, required: true },
   concentrationName: String,
-  overlap: { type: [String], required: true },
+  conflictsWith: { type: [String], required: true },
   rootNodeId: { type: String, required: true },
   nodesData: { type: [NodeDataSchema], required: true }
 });

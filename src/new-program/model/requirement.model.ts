@@ -5,7 +5,7 @@ export interface RequirementData {
     uiType: "LIST" | "GROUP" | "OPTION";
     programId: string;
     concentrationName?: string;
-    overlap: string[];
+    conflictsWith: string[];
     rootNodeId: string;
     nodesData: NodeData[];
 }
