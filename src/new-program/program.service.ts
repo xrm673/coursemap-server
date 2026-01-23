@@ -591,7 +591,10 @@ export const isPriorSemester = (semester: string, selectedSemester: string): boo
 }
 
 export const isAvailableInLocation = (course: Course): boolean => {
-    return course.enrollGroups?.some(group => group.locationConflicts) ?? false;
+    // 如果任何一个 enrollGroup 有 locationConflicts，则该课程在地点上不可用
+    // 返回 true 当所有 enrollGroup 都没有 locationConflicts
+    const hasLocationConflicts = course.enrollGroups?.some(group => group.locationConflicts) ?? false;
+    return !hasLocationConflicts;
 };
 
 export const isAvailableInSemester = (course: Course, semester: string): boolean => {

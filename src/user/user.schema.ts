@@ -23,6 +23,7 @@ const UserMinorSchema = new Schema<UserMinor>({
 const RawUserCourseSchema = new Schema<RawUserCourse>({
   _id: { type: String, required: true },
   grpIdentifier: String,
+  isScheduled: { type: Boolean, required: true },
   usedInRequirements: { type: [String], required: true },
   credit: { type: Number },
   semester: { type: String },
