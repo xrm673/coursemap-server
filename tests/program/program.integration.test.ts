@@ -1,4 +1,4 @@
-import { getProgram } from '../../src/new-program/program.service';
+import { getProgram } from '../../src/new-program/services/program.service';
 import { ProgramTreeModel } from '../../src/new-program/program.schema';
 import { RequirementTreeModel } from '../../src/new-program/requirement.schema';
 import { UserModel } from '../../src/user/user.schema';

@@ -5,7 +5,7 @@ import {
   findMatchingUserCourse,
   isAvailableInLocation,
   isAvailableInSemester,
-} from '../../src/new-program/course-utils';
+} from '../../src/utils/course-utils';
 import { Course, CourseWithTopic } from '../../src/course/course.model';
 import { createUserCourse, userCourseSets } from './test-fixtures';
 

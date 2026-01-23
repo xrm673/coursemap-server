@@ -1,12 +1,12 @@
-import { CourseSetNodeData } from "./model/requirement.model";
-import { RawUserCourse } from "../user/user.model";
-import { CourseOption } from "./dto/option.dto";
-import { CourseWithTopic } from "../course/course.model";
-import { Course } from "../course/course.model";
-import { CourseUserState, CourseTakingStatus } from "./dto/option.dto";
-import { getCourseOptionId } from "./course-utils";
-import { getCoursesByIds } from "../course/course.service";
-import { findMatchingUserCourse, isAvailableInLocation, isAvailableInSemester, compareSemester, isPriorSemester } from "./course-utils";
+import { CourseSetNodeData } from "../model/requirement.model";
+import { RawUserCourse } from "../../user/user.model";
+import { CourseOption } from "../dto/option.dto";
+import { CourseWithTopic } from "../../course/course.model";
+import { Course } from "../../course/course.model";
+import { CourseUserState, CourseTakingStatus } from "../dto/option.dto";
+import { getCourseOptionId } from "../../utils/course-utils";
+import { getCoursesByIds } from "../../course/course.service";
+import { findMatchingUserCourse, isAvailableInLocation, isAvailableInSemester, compareSemester, isPriorSemester } from "../../utils/course-utils";
 
 interface NodeStateResult {
     courseOptions: CourseOption[];

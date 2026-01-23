@@ -2,7 +2,7 @@
 // Request handlers for new program requirements
 
 import { Request, Response } from 'express';
-import * as ProgramService from './program.service';
+import * as ProgramService from './services/program.service';
 import { DEFAULT_SEMESTER } from '../utils/constants';
 
 export const getProgram = async (req: Request, res: Response): Promise<void> => {

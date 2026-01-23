@@ -1,4 +1,4 @@
-import { getRequirementIds } from '../../src/new-program/program.service';
+import { getRequirementIds } from '../../src/new-program/services/program.service';
 import { User } from '../../src/user/user.model';
 import { ProgramData } from '../../src/new-program/model/program.model';
 import { mockUsers, mockPrograms } from './test-fixtures';

@@ -1,4 +1,4 @@
-import { getCourseStatus } from '../../src/new-program/course-allocation.service';
+import { getCourseStatus } from '../../src/new-program/services/course-allocation.service';
 import { Course, CourseWithTopic } from '../../src/course/course.model';
 import { RawUserCourse } from '../../src/user/user.model';
 import { createUserCourse, mockUserCourses } from './test-fixtures';

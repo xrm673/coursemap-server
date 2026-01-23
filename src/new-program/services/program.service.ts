@@ -1,15 +1,16 @@
-import { UserModel } from "../user/user.schema";
-import { ProgramTreeModel } from "./program.schema";
-import { ProgramData } from "./model/program.model";
-import { User } from "../user/user.model";
-import { RawUserCourse } from "../user/user.model";
+import { UserModel } from "../../user/user.schema";
+import { ProgramTreeModel } from "../program.schema";
+import { ProgramData } from "../model/program.model";
+import { User } from "../../user/user.model";
+import { RawUserCourse } from "../../user/user.model";
 
-import { ProgramResponse } from "./dto/program.dto";
-import { RequirementTreeModel } from "./requirement.schema";
-import { Requirement } from "./dto/requirements.dto";
-import { Node, CourseSetNode, GroupNode } from "./dto/node.dto";
-import { RequirementData } from "./model/requirement.model";
+import { ProgramResponse } from "../dto/program.dto";
+import { RequirementTreeModel } from "../requirement.schema";
+import { Requirement } from "../dto/requirements.dto";
+import { Node, CourseSetNode, GroupNode } from "../dto/node.dto";
+import { RequirementData } from "../model/requirement.model";
 import { computeCourseSetNodeState } from "./course-allocation.service";
+import { CourseOption, CourseTakingStatus } from "../dto/option.dto";
 
 export const getProgram = async (programId: string, userId: string, selectedSemester: string): Promise<ProgramResponse> => {
     
@@ -231,12 +232,16 @@ const buildRequirement = async (
                 conflictsWithRequirementIds
             );
             
+            // 对 options 排序：生成排序种子，保证同一请求内稳定
+            const sortSeed = `${requirementData._id}-${nodeData.nodeId}`;
+            const sortedOptions = sortCourseOptions(result.courseOptions, sortSeed);
+            
             const courseSetNode: CourseSetNode = {
                 nodeId: nodeData.nodeId,
                 type: "COURSE_SET",
                 title: nodeData.title,
                 rule: nodeData.rule,
-                options: result.courseOptions,
+                options: sortedOptions,
                 nodeState: result.nodeState
             };
             
@@ -348,4 +353,85 @@ const isUserProgram = (program: ProgramData, user: User): boolean => {
         return user.minors.some(minor => minor.minorId === program._id);
     }
     return false;
+};
+
+/**
+ * 对 CourseOption 数组排序
+ * 
+ * 排序规则：
+ * 1. IN_PROGRESS 最前
+ * 2. available 的课程优先（isAvailable = true）
+ * 3. 按 status 权重：SAVED > PLANNED > NOT_ON_SCHEDULE
+ * 4. COMPLETED 最后（优先级最低）
+ * 5. 同权重内用种子随机（保证同一请求内稳定）
+ * 
+ * @param options - 待排序的课程选项数组
+ * @param seed - 随机种子，用于保证同一请求内排序稳定
+ */
+const sortCourseOptions = (options: CourseOption[], seed: string): CourseOption[] => {
+    // 使用种子生成伪随机数生成器
+    const seededRandom = createSeededRandom(seed);
+    
+    // 为每个 option 预生成一个随机值（用于 tie-breaking）
+    const randomValues = new Map<string, number>();
+    options.forEach(option => {
+        randomValues.set(option.optionId, seededRandom());
+    });
+    
+    return [...options].sort((a, b) => {
+        const statusA = a.userState.status;
+        const statusB = b.userState.status;
+        
+        // 1. IN_PROGRESS 最前
+        if (statusA === "IN_PROGRESS" && statusB !== "IN_PROGRESS") return -1;
+        if (statusB === "IN_PROGRESS" && statusA !== "IN_PROGRESS") return 1;
+        
+        // 2. COMPLETED 最后（优先级最低）
+        if (statusA === "COMPLETED" && statusB !== "COMPLETED") return 1;
+        if (statusB === "COMPLETED" && statusA !== "COMPLETED") return -1;
+        
+        // 3. isAvailable 优先
+        if (a.userState.isAvailable !== b.userState.isAvailable) {
+            return a.userState.isAvailable ? -1 : 1;
+        }
+        
+        // 4. 按 status 权重排序
+        const statusWeight: Record<CourseTakingStatus, number> = {
+            "IN_PROGRESS": 0,    // 已在上面处理
+            "SAVED": 1,
+            "PLANNED": 2,
+            "NOT_ON_SCHEDULE": 3,
+            "COMPLETED": 4       // 已在上面处理
+        };
+        
+        const weightDiff = statusWeight[statusA] - statusWeight[statusB];
+        if (weightDiff !== 0) return weightDiff;
+        
+        // 5. 同权重用种子随机
+        const randomA = randomValues.get(a.optionId) || 0;
+        const randomB = randomValues.get(b.optionId) || 0;
+        return randomA - randomB;
+    });
+};
+
+/**
+ * 创建基于种子的伪随机数生成器
+ * 使用简单的线性同余生成器 (LCG) 算法
+ * 
+ * @param seed - 字符串种子
+ * @returns 返回一个函数，每次调用返回 [0, 1) 之间的伪随机数
+ */
+const createSeededRandom = (seed: string) => {
+    // 将字符串种子转换为数字 hash
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // 线性同余生成器
+    return () => {
+        hash = (hash * 9301 + 49297) % 233280;
+        return hash / 233280;
+    };
 };
