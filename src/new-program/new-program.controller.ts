@@ -4,6 +4,7 @@
 import { Request, Response } from 'express';
 import * as ProgramService from './services/program.service';
 import { DEFAULT_SEMESTER } from '../utils/constants';
+import { SortStrategy } from './dto/option.dto';
 
 export const getProgram = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -22,10 +23,18 @@ export const getProgram = async (req: Request, res: Response): Promise<void> => 
         // Get selectedSemester from query params, default to DEFAULT_SEMESTER
         const selectedSemester = (req.query.semester as string) || DEFAULT_SEMESTER;
 
+        // Get sortStrategy from query params, default to "PRIORITY"
+        const sortStrategyParam = (req.query.sortStrategy as string)?.toUpperCase();
+        const validStrategies: SortStrategy[] = ["PRIORITY", "NONE"];
+        const sortStrategy: SortStrategy = validStrategies.includes(sortStrategyParam as SortStrategy)
+            ? (sortStrategyParam as SortStrategy)
+            : "PRIORITY";
+
         const programResponse = await ProgramService.getProgram(
             programId as string,
             requestingUser._id,
-            selectedSemester
+            selectedSemester,
+            sortStrategy
         );
 
         res.status(200).json({

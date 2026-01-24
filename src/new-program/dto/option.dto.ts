@@ -18,6 +18,13 @@ export interface CourseOption {
 
 export type CourseTakingStatus = "COMPLETED" | "IN_PROGRESS" | "PLANNED" | "SAVED" | "NOT_ON_SCHEDULE";
 
+/**
+ * 课程选项排序策略
+ * - PRIORITY: 按优先级排序（IN_PROGRESS > available > status权重 > COMPLETED）
+ * - NONE: 不排序，保持原始顺序（字母顺序）
+ */
+export type SortStrategy = "PRIORITY" | "NONE";
+
 export interface CourseUserStateBase {
     isScheduled: boolean;
     isAvailable: boolean;

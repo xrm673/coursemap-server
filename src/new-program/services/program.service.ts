@@ -10,9 +10,14 @@ import { Requirement } from "../dto/requirements.dto";
 import { Node, CourseSetNode, GroupNode } from "../dto/node.dto";
 import { RequirementData } from "../model/requirement.model";
 import { computeCourseSetNodeState } from "./course-allocation.service";
-import { CourseOption, CourseTakingStatus } from "../dto/option.dto";
+import { CourseOption, CourseTakingStatus, SortStrategy } from "../dto/option.dto";
 
-export const getProgram = async (programId: string, userId: string, selectedSemester: string): Promise<ProgramResponse> => {
+export const getProgram = async (
+    programId: string, 
+    userId: string, 
+    selectedSemester: string,
+    sortStrategy: SortStrategy = "PRIORITY"
+): Promise<ProgramResponse> => {
     
     // 从数据库获取 program 信息
     const programDoc = await ProgramTreeModel.findById(programId);
@@ -43,7 +48,8 @@ export const getProgram = async (programId: string, userId: string, selectedSeme
             reqData,
             user.courses,
             selectedSemester,
-            requirementsData
+            requirementsData,
+            sortStrategy
         );
         requirementsList.push(requirement);
     }
@@ -204,7 +210,8 @@ const buildRequirement = async (
     requirementData: RequirementData,
     userCourses: RawUserCourse[],
     selectedSemester: string,
-    allRequirementsData: RequirementData[]
+    allRequirementsData: RequirementData[],
+    sortStrategy: SortStrategy
 ): Promise<Requirement> => {
     
     // 1. 计算互斥的 requirement IDs（不在 conflictsWith 列表里的其他 requirements）
@@ -232,9 +239,13 @@ const buildRequirement = async (
                 conflictsWithRequirementIds
             );
             
-            // 对 options 排序：生成排序种子，保证同一请求内稳定
+            // 根据排序策略对 options 排序
             const sortSeed = `${requirementData._id}-${nodeData.nodeId}`;
-            const sortedOptions = sortCourseOptions(result.courseOptions, sortSeed);
+            const sortedOptions = sortCourseOptionsByStrategy(
+                result.courseOptions, 
+                sortStrategy, 
+                sortSeed
+            );
             
             const courseSetNode: CourseSetNode = {
                 nodeId: nodeData.nodeId,
@@ -356,19 +367,42 @@ const isUserProgram = (program: ProgramData, user: User): boolean => {
 };
 
 /**
- * 对 CourseOption 数组排序
+ * 根据排序策略对 CourseOption 数组排序
+ * 
+ * @param options - 待排序的课程选项数组
+ * @param strategy - 排序策略
+ * @param seed - 随机种子，用于 PRIORITY 策略的 tie-breaking
+ */
+const sortCourseOptionsByStrategy = (
+    options: CourseOption[], 
+    strategy: SortStrategy,
+    seed: string
+): CourseOption[] => {
+    switch (strategy) {
+        case "PRIORITY":
+            return sortByPriority(options, seed);
+        case "NONE":
+            return options; // 返回原始顺序
+        default:
+            return options;
+    }
+};
+
+/**
+ * 按优先级排序 CourseOption 数组
  * 
  * 排序规则：
  * 1. IN_PROGRESS 最前
- * 2. available 的课程优先（isAvailable = true）
- * 3. 按 status 权重：SAVED > PLANNED > NOT_ON_SCHEDULE
- * 4. COMPLETED 最后（优先级最低）
- * 5. 同权重内用种子随机（保证同一请求内稳定）
+ * 2. COMPLETED 最后（优先级最低）
+ * 3. isAvailable 的课程优先（isAvailable = true）
+ * 4. 按 status 权重：SAVED > PLANNED > NOT_ON_SCHEDULE
+ * 5. 课程级别（lvl）较小的优先（1000-level > 2000-level > ...）
+ * 6. 同权重内用种子随机（保证同一请求内稳定）
  * 
  * @param options - 待排序的课程选项数组
  * @param seed - 随机种子，用于保证同一请求内排序稳定
  */
-const sortCourseOptions = (options: CourseOption[], seed: string): CourseOption[] => {
+const sortByPriority = (options: CourseOption[], seed: string): CourseOption[] => {
     // 使用种子生成伪随机数生成器
     const seededRandom = createSeededRandom(seed);
     
@@ -407,7 +441,14 @@ const sortCourseOptions = (options: CourseOption[], seed: string): CourseOption[
         const weightDiff = statusWeight[statusA] - statusWeight[statusB];
         if (weightDiff !== 0) return weightDiff;
         
-        // 5. 同权重用种子随机
+        // 5. 课程级别（lvl）较小的优先
+        const lvlA = a.course.lvl;
+        const lvlB = b.course.lvl;
+        if (lvlA !== lvlB) {
+            return lvlA - lvlB; // 升序：1000 < 2000 < 3000 < 4000
+        }
+        
+        // 6. 同权重用种子随机
         const randomA = randomValues.get(a.optionId) || 0;
         const randomB = randomValues.get(b.optionId) || 0;
         return randomA - randomB;
