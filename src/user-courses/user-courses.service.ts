@@ -11,6 +11,11 @@ export class UserCoursesError extends Error {
     }
 }
 
+// Helper function to normalize grpIdentifier (treat empty string as undefined)
+const normalizeGrpIdentifier = (grpIdentifier: string | undefined): string | undefined => {
+    return grpIdentifier && grpIdentifier.trim() !== '' ? grpIdentifier : undefined;
+};
+
 export const getCourses = async (userId: string): Promise<(CourseForSchedule | CourseForFavorites)[]> => {
     try {
         const user = await UserModel.findById(userId);
@@ -27,10 +32,13 @@ export const getCourses = async (userId: string): Promise<(CourseForSchedule | C
 
 export const addCourseToSchedule = async (
     userId: string, 
-    courseData: CourseForRequirement, 
+    courseId: string,
+    grpIdentifier: string | undefined,
     semester: string, 
+    credit: number,
+    sections: string[],
     usedInRequirements: string[]
-): Promise<(CourseForSchedule | CourseForFavorites)[]> => {
+): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -41,52 +49,42 @@ export const addCourseToSchedule = async (
             user.courses = [];
         }
 
-        const coursesData = await CourseModel.findByIds(user.courses.map(course => course._id));
-        const originalUserCourses = processCourses(user.courses, coursesData);
+        // Normalize grpIdentifier (treat empty string as undefined)
+        const normalizedGrpId = normalizeGrpIdentifier(grpIdentifier);
 
-        const existingCourse = user.courses.find(course => 
-            coursesMatch(course, courseData)
-        );
+        // Check if course already exists
+        const existingCourse = user.courses.find(course => {
+            if (normalizedGrpId) {
+                return course._id === courseId && course.grpIdentifier === normalizedGrpId;
+            }
+            return course._id === courseId && !course.grpIdentifier;
+        });
 
         if (existingCourse) {
             existingCourse.semester = semester;
             if (!existingCourse.isScheduled) {
                 existingCourse.isScheduled = true;
-                existingCourse.credit = courseData.enrollGroups[0].credits[0];
-                existingCourse.sections = generateCourseSections(courseData, semester, originalUserCourses);
+                existingCourse.credit = credit;
+                existingCourse.sections = sections;
             }
             await user.save();
-            
-            const processed = originalUserCourses.find(c => 
-                c._id === courseData._id && (c as any).grpIdentifier === courseData.grpIdentifier
-            );
-            if (processed) {
-                (processed as any).semester = semester;
-            }
-            return originalUserCourses;
+            return;
         }
 
         // course not exists, add it to the schedule
         const newRawCourse: RawUserCourse = {
-            _id: courseData._id,
+            _id: courseId,
             isScheduled: true,
             usedInRequirements: usedInRequirements,
             semester: semester,
-            credit: courseData.enrollGroups[0].credits[0],
-            sections: generateCourseSections(courseData, semester, originalUserCourses)
+            credit: credit,
+            sections: sections
         };
-        if (courseData.grpIdentifier) {
-            newRawCourse.grpIdentifier = courseData.grpIdentifier;
+        if (normalizedGrpId) {
+            newRawCourse.grpIdentifier = normalizedGrpId;
         }
         user.courses.push(newRawCourse);
         await user.save();
-        
-        const processedNewCourse = processCourse(newRawCourse, courseData);
-        if (processedNewCourse) {
-            originalUserCourses.push(processedNewCourse);
-        }
-        
-        return originalUserCourses;
     } catch (error) {
         console.error('Error in addCourseToSchedule:', error);
         throw error;
@@ -95,9 +93,10 @@ export const addCourseToSchedule = async (
 
 export const saveCourse = async (
     userId: string, 
-    courseData: CourseForRequirement, 
+    courseId: string,
+    grpIdentifier: string | undefined,
     usedInRequirements: string[]
-): Promise<(CourseForSchedule | CourseForFavorites)[]> => {
+): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -108,34 +107,33 @@ export const saveCourse = async (
             user.courses = [];
         }
 
-        const coursesData = await CourseModel.findByIds(user.courses.map(course => course._id));
-        const originalUserCourses = processCourses(user.courses, coursesData);
+        // Normalize grpIdentifier (treat empty string as undefined)
+        const normalizedGrpId = normalizeGrpIdentifier(grpIdentifier);
 
-        const existingCourse = user.courses.find(course => 
-            coursesMatch(course, courseData)
-        );
-        if (existingCourse) {           
-            return originalUserCourses;
+        // Check if course already exists
+        const existingCourse = user.courses.find(course => {
+            if (normalizedGrpId) {
+                return course._id === courseId && course.grpIdentifier === normalizedGrpId;
+            }
+            return course._id === courseId && !course.grpIdentifier;
+        });
+        
+        if (existingCourse) {
+            // Course already exists, no need to add again
+            return;
         }
 
-        // course not exists, add it to the schedule
+        // course not exists, add it to favorites
         const newRawCourse: RawUserCourse = {
-            _id: courseData._id,
+            _id: courseId,
             isScheduled: false,
             usedInRequirements: usedInRequirements,
         };
-        if (courseData.grpIdentifier) {
-            newRawCourse.grpIdentifier = courseData.grpIdentifier;
+        if (normalizedGrpId) {
+            newRawCourse.grpIdentifier = normalizedGrpId;
         }
         user.courses.push(newRawCourse);
         await user.save();
-        
-        const processedNewCourse = processCourse(newRawCourse, courseData);
-        if (processedNewCourse) {
-            originalUserCourses.push(processedNewCourse);
-        }
-        
-        return originalUserCourses;
     } catch (error) {
         console.error('Error in saveCourse:', error);
         throw error;
@@ -143,7 +141,11 @@ export const saveCourse = async (
 };
 
 
-export const deleteCourse = async (userId: string, courseData: CourseForRequirement): Promise<void> => {
+export const deleteCourse = async (
+    userId: string, 
+    courseId: string,
+    grpIdentifier: string | undefined
+): Promise<void> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
@@ -151,26 +153,36 @@ export const deleteCourse = async (userId: string, courseData: CourseForRequirem
         }
 
         if (!user.courses) {
-            throw new UserCoursesError('No schedule data found');
+            throw new UserCoursesError('No courses found');
         }
 
-        const existingCourse = user.courses.find(course => 
-            coursesMatch(course, courseData)
-        );
+        // Normalize grpIdentifier (treat empty string as undefined)
+        const normalizedGrpId = normalizeGrpIdentifier(grpIdentifier);
+
+        // Find the course to delete
+        const existingCourse = user.courses.find(course => {
+            if (normalizedGrpId) {
+                return course._id === courseId && course.grpIdentifier === normalizedGrpId;
+            }
+            return course._id === courseId && !course.grpIdentifier;
+        });
 
         // if course not exists, throw error
         if (!existingCourse) {
-            throw new UserCoursesError(`Course not found: ${courseData._id}${courseData.grpIdentifier ? ` (${courseData.grpIdentifier})` : ''}`);
+            throw new UserCoursesError(`Course not found: ${courseId}${normalizedGrpId ? ` (${normalizedGrpId})` : ''}`);
         }
 
         // remove the course from user.courses
-        user.courses = user.courses.filter(course => 
-            !coursesMatch(course, courseData)
-        );
+        user.courses = user.courses.filter(course => {
+            if (normalizedGrpId) {
+                return !(course._id === courseId && course.grpIdentifier === normalizedGrpId);
+            }
+            return !(course._id === courseId && !course.grpIdentifier);
+        });
 
         await user.save();
     } catch (error) {
-        console.error('Error in deleteCoursesFromSchedule:', error);
+        console.error('Error in deleteCourse:', error);
         throw error;
     }
 };

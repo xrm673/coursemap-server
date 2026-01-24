@@ -34,38 +34,54 @@ export const addCourse = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const {courseData, usedInRequirements, semester} = req.body;
-        if (!courseData) {
-            res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
+        const {courseId, grpIdentifier, isScheduled, usedInRequirements, semester, credit, sections} = req.body;
+        if (!courseId) {
+            res.status(400).json({ error: 'courseId is required' });
+            return;
+        }
+        
+        if (typeof isScheduled !== 'boolean') {
+            res.status(400).json({ error: 'isScheduled is required and must be a boolean' });
             return;
         }
 
-        // Validate course
-        if (!courseData._id) {
-            res.status(400).json({ error: 'Course must have _id' });
-            return;
-        }
         if (!Array.isArray(usedInRequirements)) {
             res.status(400).json({ error: 'usedInRequirements must be an array' });
             return;
         }
 
-        let updatedUserCourses: (CourseForSchedule | CourseForFavorites)[] | undefined;
-
-        if (semester) {
-            if (typeof semester !== 'string') {
+        if (isScheduled) {
+            if (!semester || typeof semester !== 'string') {
                 res.status(400).json({ error: 'Semester must be a string' });
                 return;
             }
-            updatedUserCourses = await UserCoursesService.addCourseToSchedule(requestingUser._id, courseData, semester, usedInRequirements);
+            if (!sections || !Array.isArray(sections)) {
+                res.status(400).json({ error: 'Sections must be an array' });
+                return;
+            }
+            if (typeof credit !== 'number') {
+                res.status(400).json({ error: 'Credit must be a number' });
+                return;
+            }
+            await UserCoursesService.addCourseToSchedule(
+                requestingUser._id, 
+                courseId,
+                grpIdentifier,
+                semester,
+                credit,
+                sections,
+                usedInRequirements
+            );
+            res.status(200).json({ message: 'Course added to schedule successfully' });
         } else {
-            updatedUserCourses = await UserCoursesService.saveCourse(requestingUser._id, courseData, usedInRequirements);
+            await UserCoursesService.saveCourse(
+                requestingUser._id,
+                courseId,
+                grpIdentifier,
+                usedInRequirements
+            );
+            res.status(200).json({ message: 'Course saved successfully' });
         }
-
-        res.status(200).json({
-            message: 'Courses added to schedule',
-            courses: updatedUserCourses
-        });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
             if (error.message === 'User not found') {
@@ -174,30 +190,25 @@ export const deleteCourse = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
-        const courseData: CourseForRequirement = req.body;
-        if (!courseData) {
-            res.status(400).json({ error: 'Request body must be a non-empty array of courses' });
+        const { courseId, grpIdentifier } = req.body;
+        
+        if (!courseId) {
+            res.status(400).json({ error: 'courseId is required' });
             return;
         }
 
-        // Validate each course data
-        if (!courseData._id) {
-            res.status(400).json({ error: 'Each course must have _id' });
-            return;
-        }
+        await UserCoursesService.deleteCourse(requestingUser._id, courseId, grpIdentifier);
 
-        await UserCoursesService.deleteCourse(requestingUser._id, courseData);
-
-        res.status(200).json({ message: 'Course deleted from schedule' });
+        res.status(200).json({ message: 'Course deleted successfully' });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {
-            if (error.message.includes('not found in schedule')) {
+            if (error.message.includes('not found')) {
                 res.status(404).json({ error: error.message });
             } else {
                 res.status(400).json({ error: error.message });
             }
         } else {
-            console.error('Error deleting course from schedule:', error);
+            console.error('Error deleting course:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
