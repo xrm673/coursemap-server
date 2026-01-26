@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import * as UserCoursesService from './user-courses.service';
 import { CourseForFavorites, CourseForSchedule, isCourseForSchedule } from '../user/user.model';
 import { CourseForRequirement } from '../course/course.model';
+import { DEFAULT_SEMESTER } from '../utils/constants';
 
 export const getCourses = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -14,7 +15,10 @@ export const getCourses = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        const courses = await UserCoursesService.getCourses(requestingUser._id);
+        // Get selectedSemester from query params, default to DEFAULT_SEMESTER
+        const selectedSemester = (req.query.semester as string) || DEFAULT_SEMESTER;
+
+        const courses = await UserCoursesService.getCourses(requestingUser._id, selectedSemester);
         res.status(200).json({ message: 'Courses fetched', userCourses: courses });
     } catch (error) {
         if (error instanceof UserCoursesService.UserCoursesError) {

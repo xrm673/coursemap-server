@@ -188,27 +188,15 @@ const generateCourseUserState = (course: Course | CourseWithTopic, userCourses: 
     const isAvailable = isSemesterAvailable && isLocationAvailable;
     
     const matchedCourse = findMatchingUserCourse(course, userCourses);
-
-    if (isScheduled && matchedCourse) {
-        return {
-            isScheduled: true,
-            status: status as "COMPLETED" | "IN_PROGRESS" | "PLANNED",
-            isAvailable,
-            isSemesterAvailable,
-            isLocationAvailable,
-            credit: matchedCourse.credit || 0,
-            semester: matchedCourse.semester || "",
-            sections: matchedCourse.sections || []
-        };
-    } else {
-        return {
-            isScheduled: false,
-            status: status as "SAVED" | "NOT_ON_SCHEDULE",
-            isAvailable,
-            isSemesterAvailable,
-            isLocationAvailable,
-        };
-    }
+    return {
+        isScheduled: matchedCourse?.isScheduled || false,
+        status: status as CourseTakingStatus,
+        isSemesterAvailable,
+        isLocationAvailable,
+        credit: matchedCourse?.credit || 0,
+        semester: matchedCourse?.semester || "",
+        sections: matchedCourse?.sections || []
+    };
 };
 
 export const getCourseStatus = (reqCourse: Course | CourseWithTopic, userCourses: RawUserCourse[], selectedSemester: string): [CourseTakingStatus, boolean] => {

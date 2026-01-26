@@ -3,6 +3,9 @@ import * as CourseModel from '../course/course.model';
 import { User, RawUserCourse, CourseForFavorites, CourseForSchedule, isCourseForSchedule } from '../user/user.model';
 import { Course, CourseForRequirement, Section } from '../course/course.model';
 import { UserError } from '../user/user.service';
+import { CourseOption } from '../new-program/dto/option.dto';
+import { getCourseStatus } from '../new-program/services/course-allocation.service';
+import { isAvailableInSemester, isAvailableInLocation } from '../utils/course-utils';
 
 export class UserCoursesError extends Error {
     constructor(message: string) {
@@ -16,14 +19,14 @@ const normalizeGrpIdentifier = (grpIdentifier: string | undefined): string | und
     return grpIdentifier && grpIdentifier.trim() !== '' ? grpIdentifier : undefined;
 };
 
-export const getCourses = async (userId: string): Promise<(CourseForSchedule | CourseForFavorites)[]> => {
+export const getCourses = async (userId: string, currentSemester: string): Promise<CourseOption[]> => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
             throw new UserError('User not found');
         }
         const coursesData = await CourseModel.findByIds(user.courses.map(course => course._id));
-        return processCourses(user.courses, coursesData);
+        return processCoursesToOptions(user.courses, coursesData, currentSemester);
     } catch (error) {
         console.error('Error in getCourses:', error);
         throw error;
@@ -424,3 +427,56 @@ const processCourses = (rawUserCourses: RawUserCourse[], coursesData: Course[]) 
     }
     return processedCourses;
 }
+
+const processCoursesToOptions = (rawUserCourses: RawUserCourse[], coursesData: Course[], currentSemester: string): CourseOption[] => {
+    const options: CourseOption[] = [];
+    
+    for (const userCourse of rawUserCourses) {
+        const matchedCourse = coursesData.find(course => course._id === userCourse._id);
+        if (!matchedCourse) continue;
+        
+        // Build course object (with grpIdentifier filtering if needed)
+        let course: Course = matchedCourse;
+        if (userCourse.grpIdentifier) {
+            const matchedGroup = matchedCourse.enrollGroups.find(
+                group => group.grpIdentifier === userCourse.grpIdentifier
+            );
+            if (matchedGroup) {
+                course = {
+                    ...matchedCourse,
+                    enrollGroups: [matchedGroup]
+                };
+            }
+        }
+        
+        // Generate optionId
+        const optionId = userCourse.grpIdentifier 
+            ? `${userCourse._id}-${userCourse.grpIdentifier}`
+            : userCourse._id;
+        
+        // Use existing utility functions to determine status and availability
+        const [status, isScheduled] = getCourseStatus(course, rawUserCourses, currentSemester);
+        const isSemesterAvailable = isAvailableInSemester(course, currentSemester);
+        const isLocationAvailable = isAvailableInLocation(course);
+        
+        const option: CourseOption = {
+            optionId,
+            type: "COURSE",
+            course,
+            userState: {
+                isScheduled,
+                isSemesterAvailable,
+                isLocationAvailable,
+                status,
+                credit: userCourse.credit || 0,
+                semester: userCourse.semester || '',
+                sections: userCourse.sections || []
+            },
+            allocation: { isCountedHere: false, notCountedReasons: [] }
+        };
+        
+        options.push(option);
+    }
+    
+    return options;
+};

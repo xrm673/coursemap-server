@@ -424,10 +424,6 @@ const sortByPriority = (options: CourseOption[], seed: string): CourseOption[] =
         if (statusA === "COMPLETED" && statusB !== "COMPLETED") return 1;
         if (statusB === "COMPLETED" && statusA !== "COMPLETED") return -1;
         
-        // 3. isAvailable 优先
-        if (a.userState.isAvailable !== b.userState.isAvailable) {
-            return a.userState.isAvailable ? -1 : 1;
-        }
         
         // 4. 按 status 权重排序
         const statusWeight: Record<CourseTakingStatus, number> = {

@@ -25,29 +25,15 @@ export type CourseTakingStatus = "COMPLETED" | "IN_PROGRESS" | "PLANNED" | "SAVE
  */
 export type SortStrategy = "PRIORITY" | "NONE";
 
-export interface CourseUserStateBase {
+export interface CourseUserState {
     isScheduled: boolean;
-    isAvailable: boolean;
     isSemesterAvailable: boolean;
     isLocationAvailable: boolean;
     status: CourseTakingStatus;
-} 
-
-export interface ScheduledCourseUserState extends CourseUserStateBase {
-    isScheduled: true;
-    status: "COMPLETED" | "IN_PROGRESS" | "PLANNED";
     credit: number;
     semester: string;
     sections: string[];
 }
-
-export interface NotScheduledCourseUserState extends CourseUserStateBase {
-    isScheduled: false;
-    status: "SAVED" | "NOT_ON_SCHEDULE";
-}
-
-export type CourseUserState = ScheduledCourseUserState | NotScheduledCourseUserState;
-
 export type Allocation =
   | {
       /** 这门课在当前 option 所属的 COURSE_SET node 下是否被计数 */
